@@ -1,0 +1,9 @@
+### Environment Variables
+@baseUrl = http://localhost:8080
+@apiPrefix = /api/v1
+@contentType = application/json
+
+
+### Health Check
+GET {{baseUrl}}{{apiPrefix}}/health
+Accept: {{contentType}}
