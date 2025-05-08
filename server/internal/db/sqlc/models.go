@@ -9,6 +9,22 @@ import (
 	"time"
 )
 
+type Session struct {
+	ID              int32          `json:"id"`
+	RefreshToken    string         `json:"refresh_token"`
+	TokenFamily     string         `json:"token_family"`
+	DeviceName      sql.NullString `json:"device_name"`
+	IpAddress       sql.NullString `json:"ip_address"`
+	UserAgent       sql.NullString `json:"user_agent"`
+	ExpiresAt       time.Time      `json:"expires_at"`
+	Status          string         `json:"status"`
+	FamilyVersion   int32          `json:"family_version"`
+	CreatedAt       time.Time      `json:"created_at"`
+	LastAccessedAt  time.Time      `json:"last_accessed_at"`
+	PreviousTokenID sql.NullInt32  `json:"previous_token_id"`
+	UserID          int32          `json:"user_id"`
+}
+
 type User struct {
 	ID                  int32          `json:"id"`
 	FirstName           string         `json:"first_name"`

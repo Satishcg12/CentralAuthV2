@@ -10,7 +10,11 @@ WHERE username = $1 LIMIT 1;
 SELECT * FROM users
 WHERE email = $1 LIMIT 1;
 
--- name: RegisterUser :exec
+-- name: GetUserByPhoneNumber :one
+SELECT * FROM users
+WHERE phone_number = $1 LIMIT 1;
+
+-- name: RegisterUser :one
 INSERT INTO users (
   username,
   email,
@@ -20,7 +24,7 @@ INSERT INTO users (
   phone_number
 ) VALUES (
   $1, $2, $3, $4, $5, $6
-)
+) 
 RETURNING *;
 
 -- name: GetUserByIdentifier :one

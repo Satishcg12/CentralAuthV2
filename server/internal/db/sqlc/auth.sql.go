@@ -88,6 +88,32 @@ func (q *Queries) GetUserByIdentifier(ctx context.Context, username string) (Use
 	return i, err
 }
 
+const getUserByPhoneNumber = `-- name: GetUserByPhoneNumber :one
+SELECT id, first_name, last_name, username, email, email_verified, password_hash, phone_number, phone_number_verified, is_active, mfa_enabled, created_at, updated_at FROM users
+WHERE phone_number = $1 LIMIT 1
+`
+
+func (q *Queries) GetUserByPhoneNumber(ctx context.Context, phoneNumber sql.NullString) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByPhoneNumber, phoneNumber)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Username,
+		&i.Email,
+		&i.EmailVerified,
+		&i.PasswordHash,
+		&i.PhoneNumber,
+		&i.PhoneNumberVerified,
+		&i.IsActive,
+		&i.MfaEnabled,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getUserByUsername = `-- name: GetUserByUsername :one
 SELECT id, first_name, last_name, username, email, email_verified, password_hash, phone_number, phone_number_verified, is_active, mfa_enabled, created_at, updated_at FROM users
 WHERE username = $1 LIMIT 1
@@ -114,7 +140,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 	return i, err
 }
 
-const registerUser = `-- name: RegisterUser :exec
+const registerUser = `-- name: RegisterUser :one
 INSERT INTO users (
   username,
   email,
@@ -124,7 +150,7 @@ INSERT INTO users (
   phone_number
 ) VALUES (
   $1, $2, $3, $4, $5, $6
-)
+) 
 RETURNING id, first_name, last_name, username, email, email_verified, password_hash, phone_number, phone_number_verified, is_active, mfa_enabled, created_at, updated_at
 `
 
@@ -137,8 +163,8 @@ type RegisterUserParams struct {
 	PhoneNumber  sql.NullString `json:"phone_number"`
 }
 
-func (q *Queries) RegisterUser(ctx context.Context, arg RegisterUserParams) error {
-	_, err := q.db.ExecContext(ctx, registerUser,
+func (q *Queries) RegisterUser(ctx context.Context, arg RegisterUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, registerUser,
 		arg.Username,
 		arg.Email,
 		arg.PasswordHash,
@@ -146,5 +172,21 @@ func (q *Queries) RegisterUser(ctx context.Context, arg RegisterUserParams) erro
 		arg.LastName,
 		arg.PhoneNumber,
 	)
-	return err
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.FirstName,
+		&i.LastName,
+		&i.Username,
+		&i.Email,
+		&i.EmailVerified,
+		&i.PasswordHash,
+		&i.PhoneNumber,
+		&i.PhoneNumberVerified,
+		&i.IsActive,
+		&i.MfaEnabled,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }

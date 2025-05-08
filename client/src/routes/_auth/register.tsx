@@ -1,3 +1,4 @@
+import { MultiStageRegistrationForm } from '@/components/auth/registration-form'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_auth/register')({
@@ -5,5 +6,7 @@ export const Route = createFileRoute('/_auth/register')({
 })
 
 function RouteComponent() {
-  return <div>Hello "/auth/register"!</div>
+  return <>
+    <MultiStageRegistrationForm />
+  </>
 }
