@@ -11,6 +11,7 @@ import (
 
 type Session struct {
 	ID              int32          `json:"id"`
+	AccessToken     string         `json:"access_token"`
 	RefreshToken    string         `json:"refresh_token"`
 	TokenFamily     string         `json:"token_family"`
 	DeviceName      sql.NullString `json:"device_name"`

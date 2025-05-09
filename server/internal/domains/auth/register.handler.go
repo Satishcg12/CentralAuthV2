@@ -26,17 +26,21 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return err
 	}
 
-	// check if the email already exists
-	_, err := h.store.GetUserByEmail(c.Request().Context(), req.Email)
+	// check if the phone number already exists
+	_, err := h.store.GetUserByPhoneNumber(c.Request().Context(), sql.NullString{
+		String: req.PhoneNumber,
+		Valid:  req.PhoneNumber != "",
+	})
 	if err == nil {
 		return utils.RespondWithError(
 			c,
 			utils.StatusCodeConflict,
 			"User already exists",
 			utils.ErrorCodeDuplicateEntry,
-			"User with this email already exists",
+
+			"User with this phone number already exists",
 			map[string]any{
-				"email": "Email already exists",
+				"phone_number": "Phone number already exists",
 			},
 		)
 	} else if err != sql.ErrNoRows {
@@ -49,6 +53,7 @@ func (h *AuthHandler) Register(c echo.Context) error {
 			err,
 		)
 	}
+
 	// check if the username already exists
 	_, err = h.store.GetUserByUsername(c.Request().Context(), req.Username)
 	if err == nil {
@@ -72,21 +77,18 @@ func (h *AuthHandler) Register(c echo.Context) error {
 			err,
 		)
 	}
-	// check if the phone number already exists
-	_, err = h.store.GetUserByPhoneNumber(c.Request().Context(), sql.NullString{
-		String: req.PhoneNumber,
-		Valid:  req.PhoneNumber != "",
-	})
+
+	// check if the email already exists
+	_, err = h.store.GetUserByEmail(c.Request().Context(), req.Email)
 	if err == nil {
 		return utils.RespondWithError(
 			c,
 			utils.StatusCodeConflict,
 			"User already exists",
 			utils.ErrorCodeDuplicateEntry,
-
-			"User with this phone number already exists",
+			"User with this email already exists",
 			map[string]any{
-				"phone_number": "Phone number already exists",
+				"email": "Email already exists",
 			},
 		)
 	} else if err != sql.ErrNoRows {

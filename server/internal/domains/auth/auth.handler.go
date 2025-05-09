@@ -12,7 +12,7 @@ type AuthHandler struct {
 }
 
 // NewAuthHandler creates a new authentication handler
-func NewAuthHandler(ah *domains.AppHanders) *AuthHandler {
+func NewAuthHandler(ah *domains.AppHandlers) *AuthHandler {
 	return &AuthHandler{
 		store:  ah.Store,
 		config: ah.Cfg,

@@ -317,7 +317,10 @@ const Step2Form = ({ formData, onSubmit, handleBack, isSubmitting, fieldErrors, 
 }
 
 // Update the MultiStageRegistrationForm component
-export const MultiStageRegistrationForm = () => {
+export const MultiStageRegistrationForm = ({
+  className,
+  ...props
+}: React.ComponentProps<"div">) => {
   const [step, setStep] = useState(0)
   const totalSteps = 3
   const [formData, setFormData] = useState<Partial<FormData>>({})
@@ -481,7 +484,7 @@ export const MultiStageRegistrationForm = () => {
 
   // Modified JSX to display general errors
   return (
-    <div className="flex flex-col gap-6">
+    <div className={cn("flex flex-col gap-6", className)} {...props} >
       <div className="flex flex-col items-center gap-2">
         <Link
           to="/"

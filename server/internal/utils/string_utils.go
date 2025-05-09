@@ -2,11 +2,14 @@ package utils
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
 )
+
+var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 // StringToInt converts a string to an integer with a default value if conversion fails
 func StringToInt(s string, defaultValue int) (int, error) {
@@ -159,4 +162,18 @@ func FormatDuration(d time.Duration) string {
 	days := int(d.Hours()) / 24
 	hours := int(d.Hours()) % 24
 	return fmt.Sprintf("%d days, %d hours", days, hours)
+}
+
+// GenerateRandomString generates a random string of the specified length
+func GenerateRandomString(length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	if length <= 0 {
+		return "", fmt.Errorf("length must be greater than 0")
+	}
+
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b), nil
 }

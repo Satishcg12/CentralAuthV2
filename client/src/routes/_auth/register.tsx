@@ -7,6 +7,6 @@ export const Route = createFileRoute('/_auth/register')({
 
 function RouteComponent() {
   return <>
-    <MultiStageRegistrationForm />
+    <MultiStageRegistrationForm className="mx-auto max-w-sm" />
   </>
 }

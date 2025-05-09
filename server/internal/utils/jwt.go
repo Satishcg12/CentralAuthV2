@@ -21,15 +21,15 @@ func InitJWT(cfg config.JWTConfig) {
 
 // AccessTokenClaims represents the claims for access tokens
 type AccessTokenClaims struct {
-	UserID        int64    `json:"user_id"`
-	Username      string   `json:"username"`
-	Email         string   `json:"email,omitempty"`
-	FirstName     string   `json:"first_name,omitempty"`
-	LastName      string   `json:"last_name,omitempty"`
-	EmailVerified bool     `json:"email_verified,omitempty"`
-	PhoneVerified bool     `json:"phone_verified,omitempty"`
-	Roles         []string `json:"roles,omitempty"`
-	Permissions   []string `json:"permissions,omitempty"`
+	UserID        int64  `json:"user_id"`
+	Username      string `json:"username"`
+	Email         string `json:"email,omitempty"`
+	FirstName     string `json:"first_name,omitempty"`
+	LastName      string `json:"last_name,omitempty"`
+	EmailVerified bool   `json:"email_verified,omitempty"`
+	PhoneVerified bool   `json:"phone_verified,omitempty"`
+	// Roles         []string `json:"roles,omitempty"`
+	// Permissions   []string `json:"permissions,omitempty"`
 	jwt.RegisteredClaims
 }
 

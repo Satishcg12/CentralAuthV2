@@ -1,5 +1,6 @@
+import type { APIResponse } from "@/api/api";
 import { API_BASE_URL, API_TIMEOUT } from "@/utils/config";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 
 const API = axios.create({
     baseURL: API_BASE_URL,
@@ -112,5 +113,34 @@ const API = axios.create({
 //         return Promise.reject(error);
 //     },
 // );
+
+export const handleApiError = <T>(error: unknown): never => {
+    if (axios.isAxiosError(error)) {
+      const axiosError = error as AxiosError<APIResponse<T>>;
+      // Return the API error response if available
+      if (axiosError.response?.data) {
+        throw axiosError.response.data;
+      }
+      // Network or request error
+      if (axiosError.request) {
+        throw {
+          message: "Network error. Please check your connection.",
+          data: null,
+          status: "internal_error",
+          timestamp: new Date().toISOString()
+        } as APIResponse<null>;
+      }
+    }
+    
+    // Fallback for non-Axios errors
+    throw {
+      success: false,
+      message: error instanceof Error ? error.message : "An unknown error occurred",
+      data: null,
+      status: "error",
+      timestamp: new Date().toISOString()
+    } as APIResponse<null>;
+  };
+  
 
 export default API;

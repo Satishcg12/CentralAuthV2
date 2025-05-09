@@ -2,6 +2,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { GalleryVerticalEnd } from "lucide-react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
+import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -14,9 +15,11 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { Link } from "@tanstack/react-router"
+import { Link, useNavigate } from "@tanstack/react-router"
 import Logo from "../logo"
 import { APP_NAME, APP_VERSION } from "@/utils/config"
+import { useLogin } from "@/api/auth/auth.query"
+import { toast } from "sonner"
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -28,18 +31,48 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+
+  const navigate = useNavigate()
+  const login = useLogin()
+  const [error, setError] = useState<string | null>(null)
+
   // Initialize form with react-hook-form and zod validation
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
+      password: "",
     },
   })
 
   // Handle form submission
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // You can add your login logic here
-    console.log(values)
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setError(null) // Reset error state
+    try {
+      // Use the login function from UserContext
+      const res = await login.mutateAsync({
+        email: values.email,
+        password: values.password,
+      })
+      if (!res) {
+        throw new Error('Login failed. Please try again.')
+      }
+
+      // Show success message
+      toast.success(`Welcome back!`);
+
+      // Check if there's a redirect path stored
+      const redirectPath = sessionStorage.getItem('redirect_after_login');
+      if (redirectPath) {
+        sessionStorage.removeItem('redirect_after_login');
+        navigate({ to: redirectPath });
+      } else {
+        // Default redirect to home page
+        navigate({ to: '/' });
+      }
+    } catch (error: any) {
+      setError(error.response?.data?.error?.description || 'An error occurred during login. Please try again.');
+    }
   }
 
   return (
@@ -66,6 +99,11 @@ export function LoginForm({
             </div>
           </div>
           <div className="flex flex-col gap-6">
+            {error && (
+              <div className="bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded relative" role="alert">
+                <span className="block sm:inline">{error}</span>
+              </div>
+            )}
             <FormField
               control={form.control}
               name="email"

@@ -2,6 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE sessions (
     id SERIAL PRIMARY KEY,
+    access_token TEXT NOT NULL UNIQUE,
     refresh_token VARCHAR(255) NOT NULL UNIQUE,
     token_family VARCHAR(64) NOT NULL,
     device_name VARCHAR(255),
@@ -12,7 +13,6 @@ CREATE TABLE sessions (
     family_version INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_accessed_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
     previous_token_id INTEGER REFERENCES sessions(id) ON DELETE SET NULL,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE
 );

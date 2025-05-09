@@ -2,7 +2,6 @@ package utils
 
 import (
 	"encoding/json"
-	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -51,54 +50,6 @@ func GetUserAgent(c echo.Context) string {
 	return c.Request().UserAgent()
 }
 
-// SetAccessTokenCookie sets an HTTP cookie with the provided access token
-func SetAccessTokenCookie(c echo.Context, accessToken string, expirySeconds int, secure bool) {
-	cookie := new(http.Cookie)
-	cookie.Name = "access_token"
-	cookie.Value = accessToken
-	cookie.Path = "/"
-	cookie.MaxAge = expirySeconds
-	cookie.HttpOnly = true // Not accessible via JavaScript
-	cookie.Secure = secure // Only sent over HTTPS if true
-	cookie.SameSite = http.SameSiteStrictMode
-	c.SetCookie(cookie)
-}
-
-// SetRefreshTokenCookie sets an HTTP cookie with the provided refresh token
-func SetRefreshTokenCookie(c echo.Context, refreshToken string, expirySeconds int, secure bool) {
-	cookie := new(http.Cookie)
-	cookie.Name = "refresh_token"
-	cookie.Value = refreshToken
-	cookie.Path = "/"
-	cookie.MaxAge = expirySeconds
-	cookie.HttpOnly = true // Not accessible via JavaScript
-	cookie.Secure = secure // Only sent over HTTPS if true
-	cookie.SameSite = http.SameSiteStrictMode
-	c.SetCookie(cookie)
-}
-
-// ClearAuthCookies removes the authentication and refresh token cookies
-func ClearAuthCookies(c echo.Context) {
-
-	// Clear access_token cookie
-	accessTokenCookie := new(http.Cookie)
-	accessTokenCookie.Name = "access_token"
-	accessTokenCookie.Value = ""
-	accessTokenCookie.Path = "/"
-	accessTokenCookie.MaxAge = -1
-	accessTokenCookie.HttpOnly = true
-	c.SetCookie(accessTokenCookie)
-
-	// Clear refresh token cookie
-	refreshCookie := new(http.Cookie)
-	refreshCookie.Name = "refresh_token"
-	refreshCookie.Value = ""
-	refreshCookie.Path = "/"
-	refreshCookie.MaxAge = -1
-	refreshCookie.HttpOnly = true
-	c.SetCookie(refreshCookie)
-}
-
 // ParseBody parses the request body into the provided struct
 func ParseBody(c echo.Context, v interface{}) error {
 	return c.Bind(v)
@@ -135,50 +86,23 @@ func GetBoolQueryParam(c echo.Context, name string, defaultValue bool) bool {
 	return defaultValue
 }
 
-// ExtractDeviceInfo extracts device information from the user agent
-func ExtractDeviceInfo(userAgent string) map[string]string {
-	info := make(map[string]string)
-
-	// Device type detection
-	deviceType := "Unknown"
-	if strings.Contains(userAgent, "Mobile") {
-		deviceType = "Mobile"
-	} else if strings.Contains(userAgent, "Tablet") {
-		deviceType = "Tablet"
-	} else {
-		deviceType = "Desktop"
-	}
-	info["deviceType"] = deviceType
-
-	// Operating system detection
-	os := "Unknown"
-	if strings.Contains(userAgent, "Windows") {
-		os = "Windows"
-	} else if strings.Contains(userAgent, "Mac OS") {
-		os = "macOS"
-	} else if strings.Contains(userAgent, "Linux") {
-		os = "Linux"
+// ExtractDeviceName tries to determine a user-friendly device name from the user agent
+func ExtractDeviceName(userAgent string) string {
+	// This is a simple implementation - in production, you'd want a more robust parser
+	if strings.Contains(userAgent, "iPhone") {
+		return "iPhone"
+	} else if strings.Contains(userAgent, "iPad") {
+		return "iPad"
 	} else if strings.Contains(userAgent, "Android") {
-		os = "Android"
-	} else if strings.Contains(userAgent, "iOS") {
-		os = "iOS"
+		return "Android Device"
+	} else if strings.Contains(userAgent, "Windows") {
+		return "Windows PC"
+	} else if strings.Contains(userAgent, "Macintosh") {
+		return "Mac"
+	} else if strings.Contains(userAgent, "Linux") {
+		return "Linux Device"
 	}
-	info["os"] = os
-
-	// Browser detection
-	browser := "Unknown"
-	if strings.Contains(userAgent, "Chrome") && !strings.Contains(userAgent, "Chromium") {
-		browser = "Chrome"
-	} else if strings.Contains(userAgent, "Firefox") {
-		browser = "Firefox"
-	} else if strings.Contains(userAgent, "Safari") && !strings.Contains(userAgent, "Chrome") {
-		browser = "Safari"
-	} else if strings.Contains(userAgent, "Edge") {
-		browser = "Edge"
-	}
-	info["browser"] = browser
-
-	return info
+	return "Unknown Device"
 }
 
 // ToJSON converts a struct to a JSON string

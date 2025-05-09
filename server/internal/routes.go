@@ -6,13 +6,14 @@ import (
 	"github.com/Satishcg12/CentralAuthV2/server/internal/domains"
 	"github.com/Satishcg12/CentralAuthV2/server/internal/domains/auth"
 	"github.com/Satishcg12/CentralAuthV2/server/internal/domains/health"
+	"github.com/Satishcg12/CentralAuthV2/server/internal/middlewares"
 	"github.com/labstack/echo/v4"
 )
 
 // setupRoutes configures all routes for the application
-func SetupRoutes(e *echo.Echo, store *db.Store, cfg *config.Config) {
+func SetupRoutes(e *echo.Echo, store *db.Store, cfg *config.Config, cm middlewares.IMiddleware) {
 
-	ah := &domains.AppHanders{
+	ah := &domains.AppHandlers{
 		Store: store,
 		Cfg:   cfg,
 	}
@@ -33,13 +34,13 @@ func SetupRoutes(e *echo.Echo, store *db.Store, cfg *config.Config) {
 	// Auth routes - public
 	auth := v1.Group("/auth")
 	auth.POST("/register", authHandler.Register)
-	// auth.POST("/login", authHandler.Login)
+	auth.POST("/login", authHandler.Login)
 	// auth.POST("/refresh", authHandler.RefreshToken)
 
-	// // Protected auth routes - require authentication
-	// authProtected := auth.Group("")
-	// authProtected.Use(cm.RequireAuth())
-	// authProtected.POST("/logout", authHandler.Logout)
+	// Protected auth routes - require authentication
+	authProtected := auth.Group("")
+	authProtected.Use(cm.RequireAuthMiddleware())
+	authProtected.POST("/logout", authHandler.Logout)
 	// authProtected.POST("/logout-all", authHandler.LogoutAllSessions)
 	// // sessions routes - require authentication
 	// authProtected.GET("/sessions", authHandler.GetActiveSessions)

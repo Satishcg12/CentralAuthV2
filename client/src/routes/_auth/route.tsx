@@ -1,7 +1,18 @@
 import { ModeToggle } from '@/components/mode-toggle'
-import { createFileRoute, Link, Outlet } from '@tanstack/react-router'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_auth')({
+  beforeLoad: async () => {
+    const isAuthenticated = useAuthStore.getState().isAuthenticated
+    if (isAuthenticated) {
+      // Redirect to the last visited page or dashboard
+      throw redirect({
+        to: '/',
+      })
+
+    }
+  },
   component: RouteComponent,
 })
 

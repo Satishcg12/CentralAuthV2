@@ -50,7 +50,6 @@ func InitializeServer(cfg *config.Config) *Server {
 	// Create store
 	store := db.NewStore(database)
 
-	SetupGlobalMiddleware(e, cfg)
 	// Add store to context
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {

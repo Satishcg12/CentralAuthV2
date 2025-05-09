@@ -46,65 +46,34 @@ func ValidationMiddleware() echo.MiddlewareFunc {
 	}
 }
 
-// ValidateJWT middleware checks for a valid JWT token in the Authorization header
-// It doesn't immediately reject the request but instead attaches authentication info to the context
-func ValidateJWT() echo.MiddlewareFunc {
+// RequireAuth middleware checks if the user is authenticated
+// This should be used after ValidateJWT middleware
+func RequireAuth() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			// Get the token from the request
-			token := utils.GetTokenFromRequest(c)
-			// If token is present, try to validate it
-			if token != "" {
-				// Verify the token and get the claims
-				userID, err := utils.GetUserIDFromAccessToken(token)
-				if err == nil {
-					// Token is valid, store user ID in context
-					c.Set("user_id", userID)
-					c.Set("authenticated", true)
-				} else {
-					// Invalid token, but don't block the request yet
-					// We'll let the RequireAuth middleware handle that if needed
-					c.Set("authenticated", false)
-					c.Set("auth_error", err.Error())
+			authenticated, ok := c.Get("authenticated").(bool)
+
+			// If not authenticated or not set, return unauthorized
+			if !ok || !authenticated {
+				errorMessage := "Authentication required"
+				if authError, ok := c.Get("auth_error").(string); ok && authError != "" {
+					errorMessage = authError
 				}
-			} else {
-				// No token found
-				c.Set("authenticated", false)
+
+				return utils.RespondWithError(
+					c,
+					utils.StatusCodeUnauthorized,
+					"Unauthorized",
+					utils.ErrorCodeUnauthorized,
+					errorMessage,
+					nil,
+				)
 			}
 
 			return next(c)
 		}
 	}
 }
-
-// // RequireAuth middleware checks if the user is authenticated
-// // This should be used after ValidateJWT middleware
-// func RequireAuth() echo.MiddlewareFunc {
-// 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-// 		return func(c echo.Context) error {
-// 			authenticated, ok := c.Get("authenticated").(bool)
-
-// 			// If not authenticated or not set, return unauthorized
-// 			if !ok || !authenticated {
-// 				errorMessage := "Authentication required"
-// 				if authError, ok := c.Get("auth_error").(string); ok && authError != "" {
-// 					errorMessage = authError
-// 				}
-
-// 				return utils.RespondWithError(
-// 					c,
-// 					utils.StatusCodeUnauthorized,
-// 					"Unauthorized",
-// 					utils.ErrorCodeUnauthorized,
-// 					errorMessage,
-// 					nil,
-// 				)
-// 			}
-
-// 			return next(c)
-// 		}
-// 	}
-// }
 
 // // RequirePermission middleware checks if the user has the required permission
 // // This should be used after RequireAuth middleware

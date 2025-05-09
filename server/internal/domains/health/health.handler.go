@@ -10,7 +10,7 @@ import (
 type HealthHandler struct{}
 
 // NewHealthHandler creates a new health check handler
-func NewHealthHandler(ah *domains.AppHanders) *HealthHandler {
+func NewHealthHandler(ah *domains.AppHandlers) *HealthHandler {
 	return &HealthHandler{}
 }
 
