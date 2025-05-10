@@ -34,16 +34,6 @@ func (m *Middleware) TokenLoaderMiddleware() echo.MiddlewareFunc {
 				refreshToken = c.FormValue("refresh_token")
 			}
 
-			// If still not found, try JSON body
-			if refreshToken == "" {
-				var jsonBody map[string]interface{}
-				if err := c.Bind(&jsonBody); err == nil {
-					if rt, ok := jsonBody["refresh_token"].(string); ok {
-						refreshToken = rt
-					}
-				}
-			}
-
 			c.Set("refresh_token", refreshToken)
 
 			return next(c)

@@ -6,24 +6,68 @@ package sqlc
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 )
 
+type SessionStatus string
+
+const (
+	SessionStatusActive   SessionStatus = "active"
+	SessionStatusInactive SessionStatus = "inactive"
+	SessionStatusRevoked  SessionStatus = "revoked"
+)
+
+func (e *SessionStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = SessionStatus(s)
+	case string:
+		*e = SessionStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for SessionStatus: %T", src)
+	}
+	return nil
+}
+
+type NullSessionStatus struct {
+	SessionStatus SessionStatus `json:"session_status"`
+	Valid         bool          `json:"valid"` // Valid is true if SessionStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullSessionStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.SessionStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.SessionStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullSessionStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.SessionStatus), nil
+}
+
 type Session struct {
-	ID              int32          `json:"id"`
-	AccessToken     string         `json:"access_token"`
-	RefreshToken    string         `json:"refresh_token"`
-	TokenFamily     string         `json:"token_family"`
-	DeviceName      sql.NullString `json:"device_name"`
-	IpAddress       sql.NullString `json:"ip_address"`
-	UserAgent       sql.NullString `json:"user_agent"`
-	ExpiresAt       time.Time      `json:"expires_at"`
-	Status          string         `json:"status"`
-	FamilyVersion   int32          `json:"family_version"`
-	CreatedAt       time.Time      `json:"created_at"`
-	LastAccessedAt  time.Time      `json:"last_accessed_at"`
-	PreviousTokenID sql.NullInt32  `json:"previous_token_id"`
-	UserID          int32          `json:"user_id"`
+	ID               int32          `json:"id"`
+	AccessToken      string         `json:"access_token"`
+	RefreshToken     string         `json:"refresh_token"`
+	DeviceName       sql.NullString `json:"device_name"`
+	IpAddress        sql.NullString `json:"ip_address"`
+	UserAgent        sql.NullString `json:"user_agent"`
+	ExpiresAt        time.Time      `json:"expires_at"`
+	RefreshExpiresAt time.Time      `json:"refresh_expires_at"`
+	Status           SessionStatus  `json:"status"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	LastAccessedAt   time.Time      `json:"last_accessed_at"`
+	UserID           int32          `json:"user_id"`
 }
 
 type User struct {

@@ -14,6 +14,9 @@ type StatusCode int
 const (
 	StatusCodeSuccess            StatusCode = http.StatusOK
 	StatusCodeCreated            StatusCode = http.StatusCreated
+	StatusCodeAccepted           StatusCode = http.StatusAccepted
+	StatusCodeNoContent          StatusCode = http.StatusNoContent
+	StatusCodeResetContent       StatusCode = http.StatusResetContent
 	StatusCodeBadRequest         StatusCode = http.StatusBadRequest
 	StatusCodeUnauthorized       StatusCode = http.StatusUnauthorized
 	StatusCodeForbidden          StatusCode = http.StatusForbidden

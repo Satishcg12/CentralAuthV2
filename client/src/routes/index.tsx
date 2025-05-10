@@ -51,9 +51,6 @@ function App() {
 					<div className="flex gap-4 justify-center">
 						{isAuthenticated ? (
 							<>
-								<Button asChild variant="outline" size="lg">
-									
-								</Button>
 								<Button asChild size="lg">
 									<Link to="/dashboard">Go to Dashboard</Link>
 								</Button>

@@ -18,6 +18,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated/route
 import { Route as AuthRouteImport } from './routes/_auth/route'
 import { Route as IndexImport } from './routes/index'
 import { Route as DemoTanstackQueryImport } from './routes/demo.tanstack-query'
+import { Route as AuthenticatedSettingImport } from './routes/_authenticated/setting'
 import { Route as AuthenticatedDashboardImport } from './routes/_authenticated/dashboard'
 import { Route as AuthRegisterImport } from './routes/_auth/register'
 import { Route as AuthLoginImport } from './routes/_auth/login'
@@ -68,6 +69,12 @@ const DemoTanstackQueryRoute = DemoTanstackQueryImport.update({
   id: '/demo/tanstack-query',
   path: '/demo/tanstack-query',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthenticatedSettingRoute = AuthenticatedSettingImport.update({
+  id: '/setting',
+  path: '/setting',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 
 const AuthenticatedDashboardRoute = AuthenticatedDashboardImport.update({
@@ -226,6 +233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardImport
       parentRoute: typeof AuthenticatedRouteImport
     }
+    '/_authenticated/setting': {
+      id: '/_authenticated/setting'
+      path: '/setting'
+      fullPath: '/setting'
+      preLoaderRoute: typeof AuthenticatedSettingImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/demo/tanstack-query': {
       id: '/demo/tanstack-query'
       path: '/demo/tanstack-query'
@@ -261,11 +275,13 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedSettingRoute: typeof AuthenticatedSettingRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedSettingRoute: AuthenticatedSettingRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
 }
 
@@ -286,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/setting': typeof AuthenticatedSettingRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
 }
@@ -304,6 +321,7 @@ export interface FileRoutesByTo {
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/setting': typeof AuthenticatedSettingRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
 }
@@ -324,6 +342,7 @@ export interface FileRoutesById {
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/setting': typeof AuthenticatedSettingRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
 }
@@ -344,6 +363,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard'
+    | '/setting'
     | '/demo/tanstack-query'
     | '/profile'
   fileRoutesByTo: FileRoutesByTo
@@ -361,6 +381,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard'
+    | '/setting'
     | '/demo/tanstack-query'
     | '/profile'
   id:
@@ -379,6 +400,7 @@ export interface FileRouteTypes {
     | '/_auth/login'
     | '/_auth/register'
     | '/_authenticated/dashboard'
+    | '/_authenticated/setting'
     | '/demo/tanstack-query'
     | '/_authenticated/profile/'
   fileRoutesById: FileRoutesById
@@ -452,6 +474,7 @@ export const routeTree = rootRoute
       "filePath": "_authenticated/route.tsx",
       "children": [
         "/_authenticated/dashboard",
+        "/_authenticated/setting",
         "/_authenticated/profile/"
       ]
     },
@@ -489,6 +512,10 @@ export const routeTree = rootRoute
     },
     "/_authenticated/dashboard": {
       "filePath": "_authenticated/dashboard.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/setting": {
+      "filePath": "_authenticated/setting.tsx",
       "parent": "/_authenticated"
     },
     "/demo/tanstack-query": {

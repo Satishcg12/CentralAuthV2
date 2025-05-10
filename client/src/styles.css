@@ -11,7 +11,7 @@
 	  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 	  /* END MY CUSTOM VARIABLES ------ */
 	}
-	
+
 	html {
 	  font-family: var(--font-sans);
 	  letter-spacing: -0.025em;
@@ -65,7 +65,7 @@ code {
 	--sidebar-border: oklch(0.92 0.004 286.32);
 	--sidebar-ring: oklch(0.606 0.25 292.717);
 }
-  
+
 .dark {
 	--background: oklch(0.141 0.005 285.823);
 	--foreground: oklch(0.985 0 0);
@@ -99,7 +99,6 @@ code {
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.541 0.281 293.009);
 }
-  
 
 @theme inline {
 	--color-background: var(--background);

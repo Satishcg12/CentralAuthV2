@@ -15,45 +15,200 @@ const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (
     access_token,
     refresh_token,
-    token_family,
     device_name,
     ip_address,
     user_agent,
     expires_at,
-    previous_token_id,
+    refresh_expires_at,
     user_id
 )
 VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8
 )
 RETURNING id
 `
 
 type CreateSessionParams struct {
-	AccessToken     string         `json:"access_token"`
-	RefreshToken    string         `json:"refresh_token"`
-	TokenFamily     string         `json:"token_family"`
-	DeviceName      sql.NullString `json:"device_name"`
-	IpAddress       sql.NullString `json:"ip_address"`
-	UserAgent       sql.NullString `json:"user_agent"`
-	ExpiresAt       time.Time      `json:"expires_at"`
-	PreviousTokenID sql.NullInt32  `json:"previous_token_id"`
-	UserID          int32          `json:"user_id"`
+	AccessToken      string         `json:"access_token"`
+	RefreshToken     string         `json:"refresh_token"`
+	DeviceName       sql.NullString `json:"device_name"`
+	IpAddress        sql.NullString `json:"ip_address"`
+	UserAgent        sql.NullString `json:"user_agent"`
+	ExpiresAt        time.Time      `json:"expires_at"`
+	RefreshExpiresAt time.Time      `json:"refresh_expires_at"`
+	UserID           int32          `json:"user_id"`
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createSession,
 		arg.AccessToken,
 		arg.RefreshToken,
-		arg.TokenFamily,
 		arg.DeviceName,
 		arg.IpAddress,
 		arg.UserAgent,
 		arg.ExpiresAt,
-		arg.PreviousTokenID,
+		arg.RefreshExpiresAt,
 		arg.UserID,
 	)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getSessionByAccessToken = `-- name: GetSessionByAccessToken :one
+SELECT id, access_token, refresh_token, device_name, ip_address, user_agent, expires_at, refresh_expires_at, status, created_at, updated_at, last_accessed_at, user_id FROM sessions
+WHERE access_token = $1
+AND status = 'active'
+LIMIT 1
+`
+
+func (q *Queries) GetSessionByAccessToken(ctx context.Context, accessToken string) (Session, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByAccessToken, accessToken)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.DeviceName,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.ExpiresAt,
+		&i.RefreshExpiresAt,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastAccessedAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const getSessionByRefreshToken = `-- name: GetSessionByRefreshToken :one
+SELECT id, access_token, refresh_token, device_name, ip_address, user_agent, expires_at, refresh_expires_at, status, created_at, updated_at, last_accessed_at, user_id FROM sessions
+WHERE refresh_token = $1
+AND status = 'active'
+LIMIT 1
+`
+
+func (q *Queries) GetSessionByRefreshToken(ctx context.Context, refreshToken string) (Session, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByRefreshToken, refreshToken)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.DeviceName,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.ExpiresAt,
+		&i.RefreshExpiresAt,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastAccessedAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const getUserSessions = `-- name: GetUserSessions :many
+SELECT id, access_token, refresh_token, device_name, ip_address, user_agent, expires_at, refresh_expires_at, status, created_at, updated_at, last_accessed_at, user_id FROM sessions
+WHERE user_id = $1
+AND status = 'active'
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetUserSessions(ctx context.Context, userID int32) ([]Session, error) {
+	rows, err := q.db.QueryContext(ctx, getUserSessions, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Session{}
+	for rows.Next() {
+		var i Session
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccessToken,
+			&i.RefreshToken,
+			&i.DeviceName,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.ExpiresAt,
+			&i.RefreshExpiresAt,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastAccessedAt,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const revokeAllUserSessions = `-- name: RevokeAllUserSessions :exec
+UPDATE sessions
+SET status = 'revoked',
+    updated_at = CURRENT_TIMESTAMP
+WHERE user_id = $1
+AND status = 'active'
+`
+
+func (q *Queries) RevokeAllUserSessions(ctx context.Context, userID int32) error {
+	_, err := q.db.ExecContext(ctx, revokeAllUserSessions, userID)
+	return err
+}
+
+const revokeSession = `-- name: RevokeSession :exec
+UPDATE sessions
+SET status = 'revoked',
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+AND status = 'active'
+`
+
+func (q *Queries) RevokeSession(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, revokeSession, id)
+	return err
+}
+
+const updateAccessToken = `-- name: UpdateAccessToken :exec
+UPDATE sessions
+SET access_token = $1,
+    expires_at = $2,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $3
+AND status = 'active'
+`
+
+type UpdateAccessTokenParams struct {
+	AccessToken string    `json:"access_token"`
+	ExpiresAt   time.Time `json:"expires_at"`
+	ID          int32     `json:"id"`
+}
+
+func (q *Queries) UpdateAccessToken(ctx context.Context, arg UpdateAccessTokenParams) error {
+	_, err := q.db.ExecContext(ctx, updateAccessToken, arg.AccessToken, arg.ExpiresAt, arg.ID)
+	return err
+}
+
+const updateLastAccessed = `-- name: UpdateLastAccessed :exec
+UPDATE sessions
+SET last_accessed_at = CURRENT_TIMESTAMP
+WHERE id = $1
+AND status = 'active'
+`
+
+func (q *Queries) UpdateLastAccessed(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, updateLastAccessed, id)
+	return err
 }

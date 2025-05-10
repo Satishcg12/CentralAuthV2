@@ -21,3 +21,15 @@ export interface LoginResponse {
     refresh_token: string;
     user_id: number;
 }
+export interface RefreshTokenRequest {
+    refresh_token?: string;
+}
+export interface RefreshTokenResponse {
+    access_token: string;
+}
+export interface LogoutRequest {
+    refresh_token?: string;
+}
+export interface LogoutResponse {
+    success: boolean;
+}

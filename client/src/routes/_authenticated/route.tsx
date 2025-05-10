@@ -1,5 +1,7 @@
+import { AppSidebar } from '@/components/app-sidebar'
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { createFileRoute, Outlet, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async () => {
@@ -16,26 +18,17 @@ export const Route = createFileRoute('/_authenticated')({
 
 function RouteComponent() {
   return (
-    <div className="relative flex flex-col min-h-screen ">
-      <div className="flex justify-end p-4">
-        {/* <ModeToggle /> */}
-      </div>
-      {/* Auth Layout */}
-      <main className="h-fit p-4 max-w-3xl m-auto bg-background text-foreground">
-        {/* <Outlet /> */}
-      </main>
-
-      {/* Footer */}
-      <div className="absolute bottom-0 left-0 w-full flex flex-col md:flex-row justify-between items-center px-6 py-4 text-xs ">
-        <div>
-          &copy; {new Date().getFullYear()} CentralAuth
-        </div>
-        <div className="flex gap-4 mt-2 md:mt-0 ">
-          {/* <Link to="/help" className="hover:underline">Help</Link> */}
-          {/* <Link to="/privacy" className="hover:underline">Privacy</Link> */}
-          {/* <Link to="/terms" className="hover:underline">Terms</Link> */}
-        </div>
-      </div>
-    </div>
+    <>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset className='border'>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            <div className="flex-1">
+              <Outlet />
+            </div>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </>
   )
 }

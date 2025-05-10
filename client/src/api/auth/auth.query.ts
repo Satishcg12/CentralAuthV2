@@ -32,3 +32,47 @@ export const useLogin = () =>
             console.error("Login error:", error);
         },
     });
+
+export const useLogout = () =>
+    useMutation({
+        mutationFn: authApi.logout,
+        onSuccess: () => {
+            // Clear the authentication state
+            const clearAuth = useAuthStore.getState().clearAuth;
+            clearAuth();
+        },
+        onError: (error) => {
+            console.error("Logout error:", error);
+        },
+    });
+
+export const useRefreshToken = () =>
+    useMutation({
+        mutationFn: authApi.refreshToken,
+        onSuccess: (data) => {
+            // Extract token from response
+            if (!data.data) {
+                throw new Error("No response data received");
+            }
+            const { access_token } = data.data;
+
+            // Decode the JWT token to get user information
+            const decodedUser = decodeJwt(access_token);
+
+            if (!decodedUser) {
+                throw new Error("Invalid token");
+            }
+            
+            // Update authentication state with new token and user info
+            const setAuth = useAuthStore.getState().setAuth;
+            setAuth(decodedUser, access_token);
+            
+            return access_token;
+        },
+        onError: (error) => {
+            console.error("Token refresh error:", error);
+            // Clear auth on refresh failure
+            const clearAuth = useAuthStore.getState().clearAuth;
+            clearAuth();
+        },
+    });

@@ -42,6 +42,11 @@ func DeleteCookie(c echo.Context, name string) error {
 	return nil
 }
 
+// SetAccessTokenCookie sets only the access token cookie
+func SetAccessTokenCookie(c echo.Context, accessToken string) error {
+	return SetCookie(c, "access_token", accessToken, int(15*time.Minute.Seconds())) // 15 minutes
+}
+
 func SetTokensCookies(c echo.Context, accessToken, refreshToken string) error {
 	if err := SetCookie(c, "access_token", accessToken, int(15*time.Minute.Seconds())); err != nil { // 15 minutes
 		return err
@@ -51,9 +56,7 @@ func SetTokensCookies(c echo.Context, accessToken, refreshToken string) error {
 
 func DeleteTokensCookies(c echo.Context) error {
 	if err := DeleteCookie(c, "access_token"); err != nil {
-
 		return err
 	}
 	return DeleteCookie(c, "refresh_token")
-
 }

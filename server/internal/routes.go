@@ -35,7 +35,7 @@ func SetupRoutes(e *echo.Echo, store *db.Store, cfg *config.Config, cm middlewar
 	auth := v1.Group("/auth")
 	auth.POST("/register", authHandler.Register)
 	auth.POST("/login", authHandler.Login)
-	// auth.POST("/refresh", authHandler.RefreshToken)
+	auth.POST("/refresh", authHandler.Refresh)
 
 	// Protected auth routes - require authentication
 	authProtected := auth.Group("")

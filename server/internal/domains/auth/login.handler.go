@@ -24,7 +24,6 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	}
 	// validate the request body
 	if err := c.Validate(req); err != nil {
-
 		return err
 	}
 	// check if the user exists
@@ -36,7 +35,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 				utils.StatusCodeUnauthorized,
 				"Invalid credentials",
 				utils.ErrorCodeUnauthorized,
-				"Invalid email or password",
+				"Email or password is incorrect",
 				err,
 			)
 		}
@@ -67,7 +66,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 			utils.StatusCodeUnauthorized,
 			"Invalid credentials",
 			utils.ErrorCodeUnauthorized,
-			"Invalid email or password",
+			"Email or password is incorrect",
 			nil,
 		)
 	}
@@ -98,31 +97,20 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	ipAddress := c.RealIP()
 	userAgent := c.Request().UserAgent()
 	deviceName := utils.ExtractDeviceName(userAgent)
-	tokenFamily, err := utils.GenerateRandomString(10)
-	if err != nil {
-		return utils.RespondWithError(
-			c,
-			utils.StatusCodeInternalError,
-			"Internal server error",
-			utils.ErrorCodeInternalError,
-			"Could not generate token family",
-			err,
-		)
-	}
+
+	// Calculate expiration times
+	accessTokenExpiry := time.Now().Add(time.Duration(h.config.JWT.ExpiryHours) * time.Hour)
+	refreshTokenExpiry := time.Now().Add(time.Duration(h.config.JWT.RefreshExpiryHours) * time.Hour)
 
 	_, err = h.store.CreateSession(c.Request().Context(), sqlc.CreateSessionParams{
-		UserID:       user.ID,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		DeviceName:   sql.NullString{String: deviceName, Valid: deviceName != ""},
-		IpAddress:    sql.NullString{String: ipAddress, Valid: ipAddress != ""},
-		UserAgent:    sql.NullString{String: userAgent, Valid: userAgent != ""},
-		TokenFamily:  tokenFamily,
-		ExpiresAt:    time.Now().Add(time.Duration(h.config.JWT.ExpiryHours) * time.Hour),
-		PreviousTokenID: sql.NullInt32{
-			Int32: 0,
-			Valid: false,
-		},
+		UserID:           user.ID,
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		DeviceName:       sql.NullString{String: deviceName, Valid: deviceName != ""},
+		IpAddress:        sql.NullString{String: ipAddress, Valid: ipAddress != ""},
+		UserAgent:        sql.NullString{String: userAgent, Valid: userAgent != ""},
+		ExpiresAt:        accessTokenExpiry,
+		RefreshExpiresAt: refreshTokenExpiry,
 	})
 	if err != nil {
 		return utils.RespondWithError(

@@ -1,6 +1,8 @@
 import type { APIResponse } from "@/api/api";
+import { authApi } from "@/api/auth/auth.api";
 import { API_BASE_URL, API_TIMEOUT } from "@/utils/config";
-import axios, { AxiosError } from "axios";
+import { useAuthStore } from "@/stores/useAuthStore";
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 const API = axios.create({
     baseURL: API_BASE_URL,
@@ -11,108 +13,104 @@ const API = axios.create({
     },
 });
 
-// // Track if we're currently refreshing the token
-// let isRefreshing = false;
-// // Store requests that should be retried after token refresh
-// let refreshSubscribers: ((token: string) => void)[] = [];
+// Track if we're currently refreshing the token
+let isRefreshing = false;
+// Store requests that should be retried after token refresh
+let refreshSubscribers: ((token: string) => void)[] = [];
 
-// // Function to add request to queue
-// const addRefreshSubscriber = (callback: (token: string) => void) => {
-//     refreshSubscribers.push(callback);
-// };
+// Function to add request to queue
+const addRefreshSubscriber = (callback: (token: string) => void) => {
+    refreshSubscribers.push(callback);
+};
 
-// // Function to process the queue with new token
-// const onRefreshed = (token: string) => {
-//     refreshSubscribers.forEach((callback) => callback(token));
-//     refreshSubscribers = [];
-// };
+// Function to process the queue with new token
+const onRefreshed = (token: string) => {
+    refreshSubscribers.forEach((callback) => callback(token));
+    refreshSubscribers = [];
+};
 
-// // Request interceptor to add token to requests
-// API.interceptors.request.use(
-//     (config) => {
-//         const accessToken = useAuthStore.getState().accessToken;
+// Request interceptor to add token to requests
+API.interceptors.request.use(
+    (config) => {
+        const accessToken = useAuthStore.getState().accessToken;
 
-//         if (accessToken) {
-//             config.headers.Authorization = `Bearer ${accessToken}`;
-//         }
+        if (accessToken) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+        }
 
-//         return config;
-//     },
-//     (error) => {
-//         return Promise.reject(error);
-//     },
-// );
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    },
+);
 
-// // Response interceptor to handle token refresh
-// API.interceptors.response.use(
-//     (response) => response,
-//     async (error) => {
-//         const originalRequest = error.config as InternalAxiosRequestConfig & {
-//             _retry?: boolean;
-//         };
+// Response interceptor to handle token refresh
+API.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config as InternalAxiosRequestConfig & {
+            _retry?: boolean;
+        };
 
-//         // Skip token refresh for login-related endpoints when credentials are invalid
-//         const isLoginAttempt = originalRequest.url?.includes('/auth/login');
-//         const isRegisterAttempt = originalRequest.url?.includes('/auth/register');
+        // Skip token refresh for login-related endpoints when credentials are invalid
+        const isLoginAttempt = originalRequest.url?.includes('/auth/login');
+        const isRegisterAttempt = originalRequest.url?.includes('/auth/register');
         
-//         // If the error is 401 and we haven't already tried to refresh the token
-//         // Skip token refresh for login/register attempts
-//         if (error.response?.status === 401 && !originalRequest._retry 
-//             && !isLoginAttempt && !isRegisterAttempt) {
-//             // Check if we're not already refreshing
-//             if (!isRefreshing) {
-//                 originalRequest._retry = true;
-//                 isRefreshing = true;
+        // If the error is 401 and we haven't already tried to refresh the token
+        // Skip token refresh for login/register attempts
+        if (error.response?.status === 401 && !originalRequest._retry 
+            && !isLoginAttempt && !isRegisterAttempt) {
+            // Check if we're not already refreshing
+            if (!isRefreshing) {
+                originalRequest._retry = true;
+                isRefreshing = true;
 
-//                 try {
-//                     // Use the existing userApi function instead of direct API call
-//                     // Empty object since refresh token is in cookies
-//                     const response = await authApi.refreshToken({});
+                try {
+                    // Use the existing authApi function instead of direct API call
+                    // Empty object since refresh token is in cookies
+                    const response = await authApi.refreshToken({});
 
-//                     // Extract new access token and user data
-//                     const { accessToken, user } = response.data?.access_token;
+                    // Extract new access token
+                    const accessToken = response.data?.access_token;
 
-//                     // Update both token AND user data in store
-//                     const authStore = useAuthStore.getState();
-//                     if (user) {
-//                         // Use setAuth to update both user and token
-//                         authStore.setAuth(user, accessToken);
-//                     } else {
-//                         // Fallback if for some reason user data isn't included
-//                         authStore.setAccessToken(accessToken);
-//                     }
+                    if (!accessToken) {
+                        throw new Error('No access token received');
+                    }
 
-//                     // Update the header for the original request
-//                     originalRequest.headers.Authorization =
-//                         `Bearer ${accessToken}`;
+                    // Update token in store
+                    const authStore = useAuthStore.getState();
+                    authStore.setAccessToken(accessToken);
 
-//                     // Process any queued requests
-//                     onRefreshed(accessToken);
-//                     isRefreshing = false;
+                    // Update the header for the original request
+                    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
-//                     // Retry the original request
-//                     return API(originalRequest);
-//                 } catch (refreshError) {
-//                     // If refresh fails, logout
-//                     isRefreshing = false;
-//                     useAuthStore.getState().clearAuth();
-//                     return Promise.reject(refreshError);
-//                 }
-//             } else {
-//                 // If we're already refreshing, queue this request
-//                 return new Promise((resolve) => {
-//                     addRefreshSubscriber((token) => {
-//                         originalRequest.headers.Authorization =
-//                             `Bearer ${token}`;
-//                         resolve(API(originalRequest));
-//                     });
-//                 });
-//             }
-//         }
+                    // Process any queued requests
+                    onRefreshed(accessToken);
+                    isRefreshing = false;
 
-//         return Promise.reject(error);
-//     },
-// );
+                    // Retry the original request
+                    return API(originalRequest);
+                } catch (refreshError) {
+                    // If refresh fails, logout
+                    isRefreshing = false;
+                    useAuthStore.getState().clearAuth();
+                    return Promise.reject(refreshError);
+                }
+            } else {
+                // If we're already refreshing, queue this request
+                return new Promise((resolve) => {
+                    addRefreshSubscriber((token) => {
+                        originalRequest.headers.Authorization = `Bearer ${token}`;
+                        resolve(API(originalRequest));
+                    });
+                });
+            }
+        }
+
+        return Promise.reject(error);
+    },
+);
 
 export const handleApiError = <T>(error: unknown): never => {
     if (axios.isAxiosError(error)) {

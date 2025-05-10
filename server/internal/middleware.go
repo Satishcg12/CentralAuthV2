@@ -33,7 +33,7 @@ func SetupGlobalMiddleware(e *echo.Echo, cfg *config.Config, cm middlewares.IMid
 	// This middleware extracts both access and refresh tokens and puts them in the context
 	e.Use(cm.TokenLoaderMiddleware())
 
-	// Add access token validation middleware
+	// // Add access token validation middleware
 	e.Use(cm.ValidateAccessTokenMiddleware())
 
 }

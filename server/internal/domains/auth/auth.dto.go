@@ -1,8 +1,11 @@
 package auth
 
-// register
+// ==========
+// Auth DTOs
+// ==========
 
-type RegisterRequst struct {
+// === Register Dto ===
+type RegisterRequest struct {
 	FirstName       string `json:"first_name" validate:"required,min=3,max=100"`
 	LastName        string `json:"last_name" validate:"required,min=3,max=100"`
 	PhoneNumber     string `json:"phone_number,omitempty" validate:"max=20"`
@@ -22,6 +25,23 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	UserID       int    `json:"user_id"`
+}
+
+type LogoutRequest struct {
+	AccessToken string `json:"access_token" validate:"required"`
+}
+type LogoutResponse struct {
+	Success bool `json:"success"`
+}
+
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token,omite"`
+}
+
+type RefreshResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	UserID       int    `json:"user_id"`

@@ -10,7 +10,7 @@ import (
 
 func (h *AuthHandler) Register(c echo.Context) error {
 	// take the request body
-	req := new(RegisterRequst)
+	req := new(RegisterRequest)
 	if err := c.Bind(req); err != nil {
 		return utils.RespondWithError(
 			c,

@@ -24,10 +24,10 @@ type Config struct {
 
 // JWTConfig holds JWT related configuration
 type JWTConfig struct {
-	Secret        string
-	ExpiryHours   int
-	RefreshSecret string
-	RefreshHours  int
+	Secret             string
+	ExpiryHours        int
+	RefreshSecret      string
+	RefreshExpiryHours int // Changed from RefreshHours to RefreshExpiryHours for consistency
 }
 
 // NewConfig creates a new configuration with default values or from environment variables
@@ -56,10 +56,10 @@ func NewConfig() *Config {
 			SSLMode:  "disable",
 		},
 		JWT: JWTConfig{
-			Secret:        "your-secret-key-change-in-production",
-			ExpiryHours:   24, // 1 day
-			RefreshSecret: "your-refresh-secret-key-change-in-production",
-			RefreshHours:  168, // 7 days
+			Secret:             "your-secret-key-change-in-production",
+			ExpiryHours:        24, // 1 day
+			RefreshSecret:      "your-refresh-secret-key-change-in-production",
+			RefreshExpiryHours: 168, // 7 days
 		},
 	}
 
@@ -128,7 +128,7 @@ func NewConfig() *Config {
 	}
 
 	if jwtRefreshHours := getEnvAsInt("JWT_REFRESH_HOURS", 168); jwtRefreshHours != 0 {
-		config.JWT.RefreshHours = jwtRefreshHours
+		config.JWT.RefreshExpiryHours = jwtRefreshHours // Changed from RefreshHours to RefreshExpiryHours
 	}
 
 	return config

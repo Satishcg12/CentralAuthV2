@@ -20,6 +20,7 @@ import Logo from "../logo"
 import { APP_NAME, APP_VERSION } from "@/utils/config"
 import { useLogin } from "@/api/auth/auth.query"
 import { toast } from "sonner"
+import type { APIResponse } from "@/api/api"
 
 // Define the form schema with Zod
 const formSchema = z.object({
@@ -71,7 +72,8 @@ export function LoginForm({
         navigate({ to: '/' });
       }
     } catch (error: any) {
-      setError(error.response?.data?.error?.description || 'An error occurred during login. Please try again.');
+      const err = error as APIResponse<null>
+      setError(err?.error?.description || 'An error occurred during login. Please try again.');
     }
   }
 

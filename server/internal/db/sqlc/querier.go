@@ -11,12 +11,19 @@ import (
 
 type Querier interface {
 	CreateSession(ctx context.Context, arg CreateSessionParams) (int32, error)
+	GetSessionByAccessToken(ctx context.Context, accessToken string) (Session, error)
+	GetSessionByRefreshToken(ctx context.Context, refreshToken string) (Session, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserById(ctx context.Context, id int32) (User, error)
 	GetUserByIdentifier(ctx context.Context, username string) (User, error)
 	GetUserByPhoneNumber(ctx context.Context, phoneNumber sql.NullString) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
+	GetUserSessions(ctx context.Context, userID int32) ([]Session, error)
 	RegisterUser(ctx context.Context, arg RegisterUserParams) (User, error)
+	RevokeAllUserSessions(ctx context.Context, userID int32) error
+	RevokeSession(ctx context.Context, id int32) error
+	UpdateAccessToken(ctx context.Context, arg UpdateAccessTokenParams) error
+	UpdateLastAccessed(ctx context.Context, id int32) error
 }
 
 var _ Querier = (*Queries)(nil)
