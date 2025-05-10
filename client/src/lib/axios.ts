@@ -32,10 +32,46 @@ const onRefreshed = (token: string) => {
 // Request interceptor to add token to requests
 API.interceptors.request.use(
     (config) => {
-        const accessToken = useAuthStore.getState().accessToken;
+        const authStore = useAuthStore.getState();
+        const accessToken = authStore.accessToken;
+        const tokenExpireAt = authStore.tokenExpireAt;
 
+        // Add token to request if it exists
         if (accessToken) {
             config.headers.Authorization = `Bearer ${accessToken}`;
+            
+            // Check if token is near expiration (within 5 minutes)
+            const isTokenExpiringSoon = tokenExpireAt && 
+                tokenExpireAt - Math.floor(Date.now() / 1000) < 300;
+                
+            // Proactively refresh token if it's expiring soon and we're not already refreshing
+            if (isTokenExpiringSoon && !isRefreshing && 
+                !config.url?.includes('/auth/refresh') && 
+                !config.url?.includes('/auth/login')) {
+                
+                // Set flag to prevent multiple refresh attempts
+                isRefreshing = true;
+                
+                // Refresh the token in the background
+                authApi.refreshToken({})
+                    .then(response => {
+                        if (response.data) {
+                            const { access_token, expire_at } = response.data;
+                            authStore.setAccessToken(access_token, expire_at);
+                            onRefreshed(access_token);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Background token refresh failed:', error);
+                        // Only clear auth if we get an actual auth error
+                        if (axios.isAxiosError(error) && error.response?.status === 401) {
+                            authStore.clearAuth();
+                        }
+                    })
+                    .finally(() => {
+                        isRefreshing = false;
+                    });
+            }
         }
 
         return config;
@@ -71,22 +107,26 @@ API.interceptors.response.use(
                     // Empty object since refresh token is in cookies
                     const response = await authApi.refreshToken({});
 
-                    // Extract new access token
-                    const accessToken = response.data?.access_token;
+                    // Extract new access token and expiration time
+                    if (!response.data) {
+                        throw new Error('No response data received');
+                    }
 
-                    if (!accessToken) {
+                    const { access_token, expire_at } = response.data;
+
+                    if (!access_token) {
                         throw new Error('No access token received');
                     }
 
                     // Update token in store
                     const authStore = useAuthStore.getState();
-                    authStore.setAccessToken(accessToken);
+                    authStore.setAccessToken(access_token, expire_at);
 
                     // Update the header for the original request
-                    originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+                    originalRequest.headers.Authorization = `Bearer ${access_token}`;
 
                     // Process any queued requests
-                    onRefreshed(accessToken);
+                    onRefreshed(access_token);
                     isRefreshing = false;
 
                     // Retry the original request

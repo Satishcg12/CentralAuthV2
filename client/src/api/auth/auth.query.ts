@@ -16,7 +16,7 @@ export const useLogin = () =>
             if (!data.data) {
                 throw new Error("No response data received");
             }
-            const { access_token } = data.data;
+            const { access_token, expire_at } = data.data;
 
             // Decode the JWT token to get user information
             const decodedUser = decodeJwt(access_token);
@@ -26,7 +26,7 @@ export const useLogin = () =>
             }
             // Fix: Use the store directly, not .call property
             const setAuth = useAuthStore.getState().setAuth;
-            setAuth(decodedUser, access_token);
+            setAuth(decodedUser, access_token, expire_at);
         },
         onError: (error) => {
             console.error("Login error:", error);
@@ -54,7 +54,7 @@ export const useRefreshToken = () =>
             if (!data.data) {
                 throw new Error("No response data received");
             }
-            const { access_token } = data.data;
+            const { access_token, expire_at } = data.data;
 
             // Decode the JWT token to get user information
             const decodedUser = decodeJwt(access_token);
@@ -65,7 +65,7 @@ export const useRefreshToken = () =>
             
             // Update authentication state with new token and user info
             const setAuth = useAuthStore.getState().setAuth;
-            setAuth(decodedUser, access_token);
+            setAuth(decodedUser, access_token, expire_at);
             
             return access_token;
         },

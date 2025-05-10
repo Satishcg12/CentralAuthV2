@@ -42,7 +42,7 @@ const data = {
       title: "Dashboard",
       icon: Activity,
       isActive: true,
-      url: "/admin/dashboard",
+      url: "/dashboard",
     },
 
     {
@@ -55,12 +55,8 @@ const data = {
           url: "/admin/applications/client-management",
         },
         {
-          title: "Clinet Role",
+          title: "Client Role",
           url: "/admin/applications/role",
-        },
-        {
-          title: "Client Permission",
-          url: "/admin/applications/permission",
         },
       ],
     },

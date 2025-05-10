@@ -28,6 +28,7 @@ type LoginResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	UserID       int    `json:"user_id"`
+	ExpireAt     int64  `json:"expire_at"`
 }
 
 type LogoutRequest struct {
@@ -45,4 +46,5 @@ type RefreshResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	UserID       int    `json:"user_id"`
+	ExpireAt     int64  `json:"expire_at"`
 }

@@ -127,6 +127,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		UserID:       int(user.ID),
+		ExpireAt:     accessTokenExpiry.Unix(),
 	}
 
 	// set the access and refresh tokens in the response header

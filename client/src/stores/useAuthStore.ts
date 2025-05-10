@@ -5,9 +5,10 @@ import { persist, createJSONStorage } from "zustand/middleware";
 interface AuthState {
     user: DecodedUser | undefined;
     accessToken: string | null;
+    tokenExpireAt: number | null;
     isAuthenticated: boolean;
-    setAuth: (user: DecodedUser, accessToken: string) => void;
-    setAccessToken: (accessToken: string) => void;
+    setAuth: (user: DecodedUser, accessToken: string, expireAt: number) => void;
+    setAccessToken: (accessToken: string, expireAt: number) => void;
     clearAuth: () => void;
 }
 
@@ -16,14 +17,16 @@ export const useAuthStore = create<AuthState>()(
         (set) => ({
             user: undefined,
             accessToken: null,
+            tokenExpireAt: null,
             isAuthenticated: false,
-            setAuth: (user, accessToken) =>
-                set({ user, accessToken, isAuthenticated: true }),
-            setAccessToken: (accessToken) => set({ accessToken }),
+            setAuth: (user, accessToken, expireAt) =>
+                set({ user, accessToken, tokenExpireAt: expireAt, isAuthenticated: true }),
+            setAccessToken: (accessToken, expireAt) => set({ accessToken, tokenExpireAt: expireAt }),
             clearAuth: () =>
                 set({
                     user: undefined,
                     accessToken: null,
+                    tokenExpireAt: null,
                     isAuthenticated: false,
                 }),
         }),
@@ -31,6 +34,7 @@ export const useAuthStore = create<AuthState>()(
             name: "auth-storage", // Local storage key
             storage: createJSONStorage(() => localStorage), // Use local storage
             version: 1,
+            
         },
     ),
 );

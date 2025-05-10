@@ -155,7 +155,10 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 
 	// Return the new access token
 	res := RefreshResponse{
-		AccessToken: newAccessToken,
+		AccessToken:  newAccessToken,
+		RefreshToken: refreshToken,
+		UserID:       int(user.ID),
+		ExpireAt:     newExpiresAt.Unix(),
 	}
 
 	return utils.RespondWithSuccess(
