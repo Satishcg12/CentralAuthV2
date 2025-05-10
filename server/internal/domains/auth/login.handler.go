@@ -71,6 +71,29 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		)
 	}
 
+	// get the device name from the request
+	ipAddress := c.RealIP()
+	userAgent := c.Request().UserAgent()
+	deviceName := utils.ExtractDeviceName(userAgent)
+
+	// Create a new session
+	sessionID, err := h.store.CreateSession(c.Request().Context(), sqlc.CreateSessionParams{
+		UserID:     user.ID,
+		DeviceName: sql.NullString{String: deviceName, Valid: deviceName != ""},
+		IpAddress:  sql.NullString{String: ipAddress, Valid: ipAddress != ""},
+		UserAgent:  sql.NullString{String: userAgent, Valid: userAgent != ""},
+	})
+	if err != nil {
+		return utils.RespondWithError(
+			c,
+			utils.StatusCodeInternalError,
+			"Internal server error",
+			utils.ErrorCodeInternalError,
+			"Could not create session",
+			err,
+		)
+	}
+
 	// generate the access and refresh tokens
 	accessToken, refreshToken, err := utils.GenerateToken(utils.AccessTokenClaims{
 		UserID:        int64(user.ID),
@@ -93,24 +116,16 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		)
 	}
 
-	// get the device name from the request
-	ipAddress := c.RealIP()
-	userAgent := c.Request().UserAgent()
-	deviceName := utils.ExtractDeviceName(userAgent)
-
 	// Calculate expiration times
-	accessTokenExpiry := time.Now().Add(time.Duration(h.config.JWT.ExpiryHours) * time.Hour)
 	refreshTokenExpiry := time.Now().Add(time.Duration(h.config.JWT.RefreshExpiryHours) * time.Hour)
+	accessTokenExpiry := time.Now().Add(time.Duration(h.config.JWT.ExpiryHours) * time.Hour)
 
-	_, err = h.store.CreateSession(c.Request().Context(), sqlc.CreateSessionParams{
-		UserID:           user.ID,
-		AccessToken:      accessToken,
-		RefreshToken:     refreshToken,
-		DeviceName:       sql.NullString{String: deviceName, Valid: deviceName != ""},
-		IpAddress:        sql.NullString{String: ipAddress, Valid: ipAddress != ""},
-		UserAgent:        sql.NullString{String: userAgent, Valid: userAgent != ""},
-		ExpiresAt:        accessTokenExpiry,
-		RefreshExpiresAt: refreshTokenExpiry,
+	// Create refresh token in database
+	refreshTokenID, err := h.store.CreateRefreshToken(c.Request().Context(), sqlc.CreateRefreshTokenParams{
+		SessionID: sessionID,
+		Token:     refreshToken,
+		ClientID:  sql.NullString{String: "", Valid: false},
+		ExpiresAt: refreshTokenExpiry,
 	})
 	if err != nil {
 		return utils.RespondWithError(
@@ -118,7 +133,24 @@ func (h *AuthHandler) Login(c echo.Context) error {
 			utils.StatusCodeInternalError,
 			"Internal server error",
 			utils.ErrorCodeInternalError,
-			"Could not create session",
+			"Could not create refresh token",
+			err,
+		)
+	}
+
+	// Create access token in database
+	_, err = h.store.CreateAccessToken(c.Request().Context(), sqlc.CreateAccessTokenParams{
+		RefreshTokenID: refreshTokenID,
+		Token:          accessToken,
+		ExpiresAt:      accessTokenExpiry,
+	})
+	if err != nil {
+		return utils.RespondWithError(
+			c,
+			utils.StatusCodeInternalError,
+			"Internal server error",
+			utils.ErrorCodeInternalError,
+			"Could not create access token",
 			err,
 		)
 	}
@@ -138,5 +170,4 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		"User logged in successfully",
 		res,
 	)
-
 }

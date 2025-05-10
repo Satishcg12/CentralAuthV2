@@ -11,43 +11,88 @@ import (
 	"time"
 )
 
+const createAccessToken = `-- name: CreateAccessToken :one
+INSERT INTO access_tokens (
+    refresh_token_id,
+    token,
+    expires_at
+)
+VALUES (
+    $1, $2, $3
+)
+RETURNING id
+`
+
+type CreateAccessTokenParams struct {
+	RefreshTokenID int32     `json:"refresh_token_id"`
+	Token          string    `json:"token"`
+	ExpiresAt      time.Time `json:"expires_at"`
+}
+
+func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, createAccessToken, arg.RefreshTokenID, arg.Token, arg.ExpiresAt)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
+const createRefreshToken = `-- name: CreateRefreshToken :one
+INSERT INTO refresh_tokens (
+    session_id,
+    token,
+    client_id,
+    expires_at
+)
+VALUES (
+    $1, $2, $3, $4
+)
+RETURNING id
+`
+
+type CreateRefreshTokenParams struct {
+	SessionID int32          `json:"session_id"`
+	Token     string         `json:"token"`
+	ClientID  sql.NullString `json:"client_id"`
+	ExpiresAt time.Time      `json:"expires_at"`
+}
+
+func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (int32, error) {
+	row := q.db.QueryRowContext(ctx, createRefreshToken,
+		arg.SessionID,
+		arg.Token,
+		arg.ClientID,
+		arg.ExpiresAt,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
+}
+
 const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (
-    access_token,
-    refresh_token,
     device_name,
     ip_address,
     user_agent,
-    expires_at,
-    refresh_expires_at,
     user_id
 )
 VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4
 )
 RETURNING id
 `
 
 type CreateSessionParams struct {
-	AccessToken      string         `json:"access_token"`
-	RefreshToken     string         `json:"refresh_token"`
-	DeviceName       sql.NullString `json:"device_name"`
-	IpAddress        sql.NullString `json:"ip_address"`
-	UserAgent        sql.NullString `json:"user_agent"`
-	ExpiresAt        time.Time      `json:"expires_at"`
-	RefreshExpiresAt time.Time      `json:"refresh_expires_at"`
-	UserID           int32          `json:"user_id"`
+	DeviceName sql.NullString `json:"device_name"`
+	IpAddress  sql.NullString `json:"ip_address"`
+	UserAgent  sql.NullString `json:"user_agent"`
+	UserID     int32          `json:"user_id"`
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (int32, error) {
 	row := q.db.QueryRowContext(ctx, createSession,
-		arg.AccessToken,
-		arg.RefreshToken,
 		arg.DeviceName,
 		arg.IpAddress,
 		arg.UserAgent,
-		arg.ExpiresAt,
-		arg.RefreshExpiresAt,
 		arg.UserID,
 	)
 	var id int32
@@ -55,92 +100,96 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (i
 	return id, err
 }
 
-const getSessionByAccessToken = `-- name: GetSessionByAccessToken :one
-SELECT id, access_token, refresh_token, device_name, ip_address, user_agent, expires_at, refresh_expires_at, status, created_at, updated_at, last_accessed_at, user_id FROM sessions
-WHERE access_token = $1
-AND status = 'active'
+const getAccessTokenByRefreshTokenID = `-- name: GetAccessTokenByRefreshTokenID :one
+SELECT id, refresh_token_id, token, expires_at, created_at FROM access_tokens
+WHERE refresh_token_id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetSessionByAccessToken(ctx context.Context, accessToken string) (Session, error) {
-	row := q.db.QueryRowContext(ctx, getSessionByAccessToken, accessToken)
-	var i Session
+func (q *Queries) GetAccessTokenByRefreshTokenID(ctx context.Context, refreshTokenID int32) (AccessToken, error) {
+	row := q.db.QueryRowContext(ctx, getAccessTokenByRefreshTokenID, refreshTokenID)
+	var i AccessToken
 	err := row.Scan(
 		&i.ID,
-		&i.AccessToken,
-		&i.RefreshToken,
-		&i.DeviceName,
-		&i.IpAddress,
-		&i.UserAgent,
+		&i.RefreshTokenID,
+		&i.Token,
 		&i.ExpiresAt,
-		&i.RefreshExpiresAt,
-		&i.Status,
 		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.LastAccessedAt,
-		&i.UserID,
 	)
 	return i, err
 }
 
-const getSessionByRefreshToken = `-- name: GetSessionByRefreshToken :one
-SELECT id, access_token, refresh_token, device_name, ip_address, user_agent, expires_at, refresh_expires_at, status, created_at, updated_at, last_accessed_at, user_id FROM sessions
-WHERE refresh_token = $1
-AND status = 'active'
+const getAccessTokenByToken = `-- name: GetAccessTokenByToken :one
+SELECT at.id, at.refresh_token_id, at.token, at.expires_at, at.created_at, rt.session_id, s.user_id, s.status, s.is_logout
+FROM access_tokens at
+JOIN refresh_tokens rt ON at.refresh_token_id = rt.id
+JOIN sessions s ON rt.session_id = s.id
+WHERE at.token = $1
+AND s.status = 'active'
+AND s.is_logout = false
 LIMIT 1
 `
 
-func (q *Queries) GetSessionByRefreshToken(ctx context.Context, refreshToken string) (Session, error) {
-	row := q.db.QueryRowContext(ctx, getSessionByRefreshToken, refreshToken)
-	var i Session
+type GetAccessTokenByTokenRow struct {
+	ID             int32         `json:"id"`
+	RefreshTokenID int32         `json:"refresh_token_id"`
+	Token          string        `json:"token"`
+	ExpiresAt      time.Time     `json:"expires_at"`
+	CreatedAt      time.Time     `json:"created_at"`
+	SessionID      int32         `json:"session_id"`
+	UserID         int32         `json:"user_id"`
+	Status         SessionStatus `json:"status"`
+	IsLogout       bool          `json:"is_logout"`
+}
+
+func (q *Queries) GetAccessTokenByToken(ctx context.Context, token string) (GetAccessTokenByTokenRow, error) {
+	row := q.db.QueryRowContext(ctx, getAccessTokenByToken, token)
+	var i GetAccessTokenByTokenRow
 	err := row.Scan(
 		&i.ID,
-		&i.AccessToken,
-		&i.RefreshToken,
-		&i.DeviceName,
-		&i.IpAddress,
-		&i.UserAgent,
+		&i.RefreshTokenID,
+		&i.Token,
 		&i.ExpiresAt,
-		&i.RefreshExpiresAt,
-		&i.Status,
 		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.LastAccessedAt,
+		&i.SessionID,
 		&i.UserID,
+		&i.Status,
+		&i.IsLogout,
 	)
 	return i, err
 }
 
-const getUserSessions = `-- name: GetUserSessions :many
-SELECT id, access_token, refresh_token, device_name, ip_address, user_agent, expires_at, refresh_expires_at, status, created_at, updated_at, last_accessed_at, user_id FROM sessions
-WHERE user_id = $1
-AND status = 'active'
-ORDER BY created_at DESC
+const getRefreshTokenByClientID = `-- name: GetRefreshTokenByClientID :many
+SELECT rt.id, rt.session_id, rt.token, rt.client_id, rt.expires_at, rt.created_at 
+FROM refresh_tokens rt
+JOIN sessions s ON rt.session_id = s.id
+WHERE rt.client_id = $1
+AND s.user_id = $2
+AND s.status = 'active'
+AND s.is_logout = false
 `
 
-func (q *Queries) GetUserSessions(ctx context.Context, userID int32) ([]Session, error) {
-	rows, err := q.db.QueryContext(ctx, getUserSessions, userID)
+type GetRefreshTokenByClientIDParams struct {
+	ClientID sql.NullString `json:"client_id"`
+	UserID   int32          `json:"user_id"`
+}
+
+func (q *Queries) GetRefreshTokenByClientID(ctx context.Context, arg GetRefreshTokenByClientIDParams) ([]RefreshToken, error) {
+	rows, err := q.db.QueryContext(ctx, getRefreshTokenByClientID, arg.ClientID, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Session{}
+	items := []RefreshToken{}
 	for rows.Next() {
-		var i Session
+		var i RefreshToken
 		if err := rows.Scan(
 			&i.ID,
-			&i.AccessToken,
-			&i.RefreshToken,
-			&i.DeviceName,
-			&i.IpAddress,
-			&i.UserAgent,
+			&i.SessionID,
+			&i.Token,
+			&i.ClientID,
 			&i.ExpiresAt,
-			&i.RefreshExpiresAt,
-			&i.Status,
 			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.LastAccessedAt,
-			&i.UserID,
 		); err != nil {
 			return nil, err
 		}
@@ -155,9 +204,222 @@ func (q *Queries) GetUserSessions(ctx context.Context, userID int32) ([]Session,
 	return items, nil
 }
 
+const getRefreshTokenByToken = `-- name: GetRefreshTokenByToken :one
+SELECT rt.id, rt.session_id, rt.token, rt.client_id, rt.expires_at, rt.created_at, s.user_id, s.is_logout, s.status 
+FROM refresh_tokens rt
+JOIN sessions s ON rt.session_id = s.id
+WHERE rt.token = $1
+AND s.status = 'active'
+AND s.is_logout = false
+LIMIT 1
+`
+
+type GetRefreshTokenByTokenRow struct {
+	ID        int32          `json:"id"`
+	SessionID int32          `json:"session_id"`
+	Token     string         `json:"token"`
+	ClientID  sql.NullString `json:"client_id"`
+	ExpiresAt time.Time      `json:"expires_at"`
+	CreatedAt time.Time      `json:"created_at"`
+	UserID    int32          `json:"user_id"`
+	IsLogout  bool           `json:"is_logout"`
+	Status    SessionStatus  `json:"status"`
+}
+
+func (q *Queries) GetRefreshTokenByToken(ctx context.Context, token string) (GetRefreshTokenByTokenRow, error) {
+	row := q.db.QueryRowContext(ctx, getRefreshTokenByToken, token)
+	var i GetRefreshTokenByTokenRow
+	err := row.Scan(
+		&i.ID,
+		&i.SessionID,
+		&i.Token,
+		&i.ClientID,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.UserID,
+		&i.IsLogout,
+		&i.Status,
+	)
+	return i, err
+}
+
+const getRefreshTokensBySessionID = `-- name: GetRefreshTokensBySessionID :many
+SELECT id, session_id, token, client_id, expires_at, created_at FROM refresh_tokens
+WHERE session_id = $1
+`
+
+func (q *Queries) GetRefreshTokensBySessionID(ctx context.Context, sessionID int32) ([]RefreshToken, error) {
+	rows, err := q.db.QueryContext(ctx, getRefreshTokensBySessionID, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RefreshToken{}
+	for rows.Next() {
+		var i RefreshToken
+		if err := rows.Scan(
+			&i.ID,
+			&i.SessionID,
+			&i.Token,
+			&i.ClientID,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSessionByID = `-- name: GetSessionByID :one
+SELECT id, device_name, ip_address, user_agent, status, created_at, updated_at, is_logout, last_accessed_at, user_id FROM sessions
+WHERE id = $1
+AND status = 'active'
+AND is_logout = false
+LIMIT 1
+`
+
+func (q *Queries) GetSessionByID(ctx context.Context, id int32) (Session, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByID, id)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.DeviceName,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsLogout,
+		&i.LastAccessedAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const getSessionByRefreshTokenID = `-- name: GetSessionByRefreshTokenID :one
+SELECT s.id, s.device_name, s.ip_address, s.user_agent, s.status, s.created_at, s.updated_at, s.is_logout, s.last_accessed_at, s.user_id
+FROM sessions s
+JOIN refresh_tokens rt ON s.id = rt.session_id
+WHERE rt.id = $1
+AND s.status = 'active'
+AND s.is_logout = false
+LIMIT 1
+`
+
+func (q *Queries) GetSessionByRefreshTokenID(ctx context.Context, id int32) (Session, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByRefreshTokenID, id)
+	var i Session
+	err := row.Scan(
+		&i.ID,
+		&i.DeviceName,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsLogout,
+		&i.LastAccessedAt,
+		&i.UserID,
+	)
+	return i, err
+}
+
+const getUserSessions = `-- name: GetUserSessions :many
+SELECT s.id, s.device_name, s.ip_address, s.user_agent, s.status, s.created_at, s.updated_at, s.is_logout, s.last_accessed_at, s.user_id, COUNT(rt.id) as token_count 
+FROM sessions s
+LEFT JOIN refresh_tokens rt ON s.id = rt.session_id
+WHERE s.user_id = $1
+AND s.status = 'active'
+AND s.is_logout = false
+GROUP BY s.id
+ORDER BY s.created_at DESC
+`
+
+type GetUserSessionsRow struct {
+	ID             int32          `json:"id"`
+	DeviceName     sql.NullString `json:"device_name"`
+	IpAddress      sql.NullString `json:"ip_address"`
+	UserAgent      sql.NullString `json:"user_agent"`
+	Status         SessionStatus  `json:"status"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	IsLogout       bool           `json:"is_logout"`
+	LastAccessedAt time.Time      `json:"last_accessed_at"`
+	UserID         int32          `json:"user_id"`
+	TokenCount     int64          `json:"token_count"`
+}
+
+func (q *Queries) GetUserSessions(ctx context.Context, userID int32) ([]GetUserSessionsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserSessions, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetUserSessionsRow{}
+	for rows.Next() {
+		var i GetUserSessionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DeviceName,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.IsLogout,
+			&i.LastAccessedAt,
+			&i.UserID,
+			&i.TokenCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const invalidateRefreshToken = `-- name: InvalidateRefreshToken :exec
+DELETE FROM refresh_tokens
+WHERE id = $1
+`
+
+func (q *Queries) InvalidateRefreshToken(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, invalidateRefreshToken, id)
+	return err
+}
+
+const logoutSession = `-- name: LogoutSession :exec
+UPDATE sessions
+SET status = 'inactive',
+    is_logout = true,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = $1
+AND status = 'active'
+`
+
+func (q *Queries) LogoutSession(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, logoutSession, id)
+	return err
+}
+
 const revokeAllUserSessions = `-- name: RevokeAllUserSessions :exec
 UPDATE sessions
 SET status = 'revoked',
+    is_logout = true,
     updated_at = CURRENT_TIMESTAMP
 WHERE user_id = $1
 AND status = 'active'
@@ -171,6 +433,7 @@ func (q *Queries) RevokeAllUserSessions(ctx context.Context, userID int32) error
 const revokeSession = `-- name: RevokeSession :exec
 UPDATE sessions
 SET status = 'revoked',
+    is_logout = true,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
 AND status = 'active'
@@ -182,22 +445,28 @@ func (q *Queries) RevokeSession(ctx context.Context, id int32) error {
 }
 
 const updateAccessToken = `-- name: UpdateAccessToken :exec
-UPDATE sessions
-SET access_token = $1,
-    expires_at = $2,
-    updated_at = CURRENT_TIMESTAMP
-WHERE id = $3
-AND status = 'active'
+INSERT INTO access_tokens (
+    refresh_token_id,
+    token,
+    expires_at
+)
+VALUES (
+    $1, $2, $3
+)
+ON CONFLICT (refresh_token_id) 
+DO UPDATE SET 
+    token = EXCLUDED.token,
+    expires_at = EXCLUDED.expires_at
 `
 
 type UpdateAccessTokenParams struct {
-	AccessToken string    `json:"access_token"`
-	ExpiresAt   time.Time `json:"expires_at"`
-	ID          int32     `json:"id"`
+	RefreshTokenID int32     `json:"refresh_token_id"`
+	Token          string    `json:"token"`
+	ExpiresAt      time.Time `json:"expires_at"`
 }
 
 func (q *Queries) UpdateAccessToken(ctx context.Context, arg UpdateAccessTokenParams) error {
-	_, err := q.db.ExecContext(ctx, updateAccessToken, arg.AccessToken, arg.ExpiresAt, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateAccessToken, arg.RefreshTokenID, arg.Token, arg.ExpiresAt)
 	return err
 }
 

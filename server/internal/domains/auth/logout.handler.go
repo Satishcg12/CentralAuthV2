@@ -22,9 +22,9 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 			nil,
 		)
 	}
-	// get session from the store
-	// if session is not found, return unauthorized
-	session, err := h.store.GetSessionByAccessToken(c.Request().Context(), accessToken)
+
+	// Get access token info from database
+	tokenInfo, err := h.store.GetAccessTokenByToken(c.Request().Context(), accessToken)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return utils.RespondWithError(
@@ -41,21 +41,24 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 			utils.StatusCodeInternalError,
 			"Internal server error",
 			utils.ErrorCodeDatabaseError,
-			"Could not get session",
+			"Could not get token information",
 			err,
 		)
 	}
-	// revoke the session
-	if err := h.store.RevokeSession(c.Request().Context(), session.ID); err != nil {
+
+	// Mark the session as logged out
+	// This will invalidate all refresh tokens tied to this session
+	if err := h.store.LogoutSession(c.Request().Context(), tokenInfo.SessionID); err != nil {
 		return utils.RespondWithError(
 			c,
 			utils.StatusCodeInternalError,
 			"Internal server error",
 			utils.ErrorCodeDatabaseError,
-			"Could not revoke session",
+			"Could not logout session",
 			err,
 		)
 	}
+
 	// clear the cookies
 	utils.DeleteTokensCookies(c)
 
@@ -69,5 +72,4 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 		"Logout successful",
 		res,
 	)
-
 }

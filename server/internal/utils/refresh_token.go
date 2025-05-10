@@ -8,3 +8,9 @@ func GenerateRefreshToken() (string, error) {
 	}
 	return refreshToken, nil
 }
+
+// GetDefaultClientID returns a default client ID for refresh tokens
+// when the client doesn't provide one
+func GetDefaultClientID() string {
+	return "default"
+}

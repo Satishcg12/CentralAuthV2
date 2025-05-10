@@ -1,5 +1,6 @@
 package utils
 
+// GenerateToken generates an access token and refresh token
 func GenerateToken(claims AccessTokenClaims) (string, string, error) {
 	// Generate access token
 	accessToken, _, err := CreateAccessToken(claims)

@@ -40,8 +40,8 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 		refreshToken = req.RefreshToken
 	}
 
-	// retrieve session from db
-	session, err := h.store.GetSessionByRefreshToken(c.Request().Context(), refreshToken)
+	// retrieve refresh token from db
+	tokenInfo, err := h.store.GetRefreshTokenByToken(c.Request().Context(), refreshToken)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return utils.RespondWithError(
@@ -56,15 +56,15 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 		return utils.RespondWithError(
 			c,
 			utils.StatusCodeInternalError,
-			"Session retrieval failed",
+			"Token retrieval failed",
 			utils.ErrorCodeInternalError,
-			"Could not retrieve session from database",
+			"Could not retrieve token from database",
 			err,
 		)
 	}
 
 	// check if the refresh token is expired
-	if session.RefreshExpiresAt.Before(time.Now()) {
+	if tokenInfo.ExpiresAt.Before(time.Now()) {
 		return utils.RespondWithError(
 			c,
 			utils.StatusCodeUnauthorized,
@@ -76,7 +76,7 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	}
 
 	// check if the session is valid
-	if session.Status != "active" {
+	if tokenInfo.Status != "active" || tokenInfo.IsLogout {
 		return utils.RespondWithError(
 			c,
 			utils.StatusCodeUnauthorized,
@@ -88,7 +88,7 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	}
 
 	// Get user from database to include in the new token
-	user, err := h.store.GetUserById(c.Request().Context(), session.UserID)
+	user, err := h.store.GetUserById(c.Request().Context(), tokenInfo.UserID)
 	if err != nil {
 		return utils.RespondWithError(
 			c,
@@ -123,13 +123,13 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	}
 
 	// Calculate new expiration time for access token
-	newExpiresAt := time.Now().Add(time.Duration(h.config.JWT.ExpiryHours) * time.Hour)
+	accessTokenExpiry := time.Now().Add(time.Duration(h.config.JWT.ExpiryHours) * time.Hour)
 
-	// Update session with new access token
+	// Update or create a new access token
 	err = h.store.UpdateAccessToken(c.Request().Context(), sqlc.UpdateAccessTokenParams{
-		AccessToken: newAccessToken,
-		ExpiresAt:   newExpiresAt,
-		ID:          session.ID,
+		RefreshTokenID: tokenInfo.ID,
+		Token:          newAccessToken,
+		ExpiresAt:      accessTokenExpiry,
 	})
 
 	if err != nil {
@@ -138,13 +138,13 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 			utils.StatusCodeInternalError,
 			"Internal server error",
 			utils.ErrorCodeInternalError,
-			"Could not update session with new access token",
+			"Could not update access token",
 			err,
 		)
 	}
 
-	// Update the last accessed timestamp
-	err = h.store.UpdateLastAccessed(c.Request().Context(), session.ID)
+	// Update the last accessed timestamp for the session
+	err = h.store.UpdateLastAccessed(c.Request().Context(), tokenInfo.SessionID)
 	if err != nil {
 		// Non-critical error, just log it
 		log.Printf("Failed to update last_accessed_at: %v", err)
@@ -158,7 +158,7 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 		AccessToken:  newAccessToken,
 		RefreshToken: refreshToken,
 		UserID:       int(user.ID),
-		ExpireAt:     newExpiresAt.Unix(),
+		ExpireAt:     accessTokenExpiry.Unix(),
 	}
 
 	return utils.RespondWithSuccess(

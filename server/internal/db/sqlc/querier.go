@@ -10,15 +10,24 @@ import (
 )
 
 type Querier interface {
+	CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (int32, error)
+	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (int32, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (int32, error)
-	GetSessionByAccessToken(ctx context.Context, accessToken string) (Session, error)
-	GetSessionByRefreshToken(ctx context.Context, refreshToken string) (Session, error)
+	GetAccessTokenByRefreshTokenID(ctx context.Context, refreshTokenID int32) (AccessToken, error)
+	GetAccessTokenByToken(ctx context.Context, token string) (GetAccessTokenByTokenRow, error)
+	GetRefreshTokenByClientID(ctx context.Context, arg GetRefreshTokenByClientIDParams) ([]RefreshToken, error)
+	GetRefreshTokenByToken(ctx context.Context, token string) (GetRefreshTokenByTokenRow, error)
+	GetRefreshTokensBySessionID(ctx context.Context, sessionID int32) ([]RefreshToken, error)
+	GetSessionByID(ctx context.Context, id int32) (Session, error)
+	GetSessionByRefreshTokenID(ctx context.Context, id int32) (Session, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserById(ctx context.Context, id int32) (User, error)
 	GetUserByIdentifier(ctx context.Context, username string) (User, error)
 	GetUserByPhoneNumber(ctx context.Context, phoneNumber sql.NullString) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
-	GetUserSessions(ctx context.Context, userID int32) ([]Session, error)
+	GetUserSessions(ctx context.Context, userID int32) ([]GetUserSessionsRow, error)
+	InvalidateRefreshToken(ctx context.Context, id int32) error
+	LogoutSession(ctx context.Context, id int32) error
 	RegisterUser(ctx context.Context, arg RegisterUserParams) (User, error)
 	RevokeAllUserSessions(ctx context.Context, userID int32) error
 	RevokeSession(ctx context.Context, id int32) error
