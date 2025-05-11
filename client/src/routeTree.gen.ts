@@ -28,6 +28,10 @@ import { Route as errors404Import } from './routes/(errors)/404'
 import { Route as errors403Import } from './routes/(errors)/403'
 import { Route as errors401Import } from './routes/(errors)/401'
 import { Route as AuthenticatedProfileIndexImport } from './routes/_authenticated/profile/index'
+import { Route as AuthenticatedClientsIndexImport } from './routes/_authenticated/clients/index'
+import { Route as AuthenticatedClientsRecoverSecretImport } from './routes/_authenticated/clients/recover-secret'
+import { Route as AuthenticatedClientsNewImport } from './routes/_authenticated/clients/new'
+import { Route as AuthenticatedClientsClientIdImport } from './routes/_authenticated/clients/$clientId'
 
 // Create/Update Routes
 
@@ -130,6 +134,32 @@ const AuthenticatedProfileIndexRoute = AuthenticatedProfileIndexImport.update({
   path: '/profile/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+
+const AuthenticatedClientsIndexRoute = AuthenticatedClientsIndexImport.update({
+  id: '/clients/',
+  path: '/clients/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+
+const AuthenticatedClientsRecoverSecretRoute =
+  AuthenticatedClientsRecoverSecretImport.update({
+    id: '/clients/recover-secret',
+    path: '/clients/recover-secret',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+
+const AuthenticatedClientsNewRoute = AuthenticatedClientsNewImport.update({
+  id: '/clients/new',
+  path: '/clients/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+
+const AuthenticatedClientsClientIdRoute =
+  AuthenticatedClientsClientIdImport.update({
+    id: '/clients/$clientId',
+    path: '/clients/$clientId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -247,6 +277,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoTanstackQueryImport
       parentRoute: typeof rootRoute
     }
+    '/_authenticated/clients/$clientId': {
+      id: '/_authenticated/clients/$clientId'
+      path: '/clients/$clientId'
+      fullPath: '/clients/$clientId'
+      preLoaderRoute: typeof AuthenticatedClientsClientIdImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
+    '/_authenticated/clients/new': {
+      id: '/_authenticated/clients/new'
+      path: '/clients/new'
+      fullPath: '/clients/new'
+      preLoaderRoute: typeof AuthenticatedClientsNewImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
+    '/_authenticated/clients/recover-secret': {
+      id: '/_authenticated/clients/recover-secret'
+      path: '/clients/recover-secret'
+      fullPath: '/clients/recover-secret'
+      preLoaderRoute: typeof AuthenticatedClientsRecoverSecretImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
+    '/_authenticated/clients/': {
+      id: '/_authenticated/clients/'
+      path: '/clients'
+      fullPath: '/clients'
+      preLoaderRoute: typeof AuthenticatedClientsIndexImport
+      parentRoute: typeof AuthenticatedRouteImport
+    }
     '/_authenticated/profile/': {
       id: '/_authenticated/profile/'
       path: '/profile'
@@ -276,12 +334,21 @@ const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedSettingRoute: typeof AuthenticatedSettingRoute
+  AuthenticatedClientsClientIdRoute: typeof AuthenticatedClientsClientIdRoute
+  AuthenticatedClientsNewRoute: typeof AuthenticatedClientsNewRoute
+  AuthenticatedClientsRecoverSecretRoute: typeof AuthenticatedClientsRecoverSecretRoute
+  AuthenticatedClientsIndexRoute: typeof AuthenticatedClientsIndexRoute
   AuthenticatedProfileIndexRoute: typeof AuthenticatedProfileIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedSettingRoute: AuthenticatedSettingRoute,
+  AuthenticatedClientsClientIdRoute: AuthenticatedClientsClientIdRoute,
+  AuthenticatedClientsNewRoute: AuthenticatedClientsNewRoute,
+  AuthenticatedClientsRecoverSecretRoute:
+    AuthenticatedClientsRecoverSecretRoute,
+  AuthenticatedClientsIndexRoute: AuthenticatedClientsIndexRoute,
   AuthenticatedProfileIndexRoute: AuthenticatedProfileIndexRoute,
 }
 
@@ -304,6 +371,10 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/setting': typeof AuthenticatedSettingRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
+  '/clients/new': typeof AuthenticatedClientsNewRoute
+  '/clients/recover-secret': typeof AuthenticatedClientsRecoverSecretRoute
+  '/clients': typeof AuthenticatedClientsIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
 }
 
@@ -323,6 +394,10 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/setting': typeof AuthenticatedSettingRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
+  '/clients/new': typeof AuthenticatedClientsNewRoute
+  '/clients/recover-secret': typeof AuthenticatedClientsRecoverSecretRoute
+  '/clients': typeof AuthenticatedClientsIndexRoute
   '/profile': typeof AuthenticatedProfileIndexRoute
 }
 
@@ -344,6 +419,10 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/setting': typeof AuthenticatedSettingRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/_authenticated/clients/$clientId': typeof AuthenticatedClientsClientIdRoute
+  '/_authenticated/clients/new': typeof AuthenticatedClientsNewRoute
+  '/_authenticated/clients/recover-secret': typeof AuthenticatedClientsRecoverSecretRoute
+  '/_authenticated/clients/': typeof AuthenticatedClientsIndexRoute
   '/_authenticated/profile/': typeof AuthenticatedProfileIndexRoute
 }
 
@@ -365,6 +444,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/setting'
     | '/demo/tanstack-query'
+    | '/clients/$clientId'
+    | '/clients/new'
+    | '/clients/recover-secret'
+    | '/clients'
     | '/profile'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -383,6 +466,10 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/setting'
     | '/demo/tanstack-query'
+    | '/clients/$clientId'
+    | '/clients/new'
+    | '/clients/recover-secret'
+    | '/clients'
     | '/profile'
   id:
     | '__root__'
@@ -402,6 +489,10 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/setting'
     | '/demo/tanstack-query'
+    | '/_authenticated/clients/$clientId'
+    | '/_authenticated/clients/new'
+    | '/_authenticated/clients/recover-secret'
+    | '/_authenticated/clients/'
     | '/_authenticated/profile/'
   fileRoutesById: FileRoutesById
 }
@@ -475,6 +566,10 @@ export const routeTree = rootRoute
       "children": [
         "/_authenticated/dashboard",
         "/_authenticated/setting",
+        "/_authenticated/clients/$clientId",
+        "/_authenticated/clients/new",
+        "/_authenticated/clients/recover-secret",
+        "/_authenticated/clients/",
         "/_authenticated/profile/"
       ]
     },
@@ -520,6 +615,22 @@ export const routeTree = rootRoute
     },
     "/demo/tanstack-query": {
       "filePath": "demo.tanstack-query.tsx"
+    },
+    "/_authenticated/clients/$clientId": {
+      "filePath": "_authenticated/clients/$clientId.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/clients/new": {
+      "filePath": "_authenticated/clients/new.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/clients/recover-secret": {
+      "filePath": "_authenticated/clients/recover-secret.tsx",
+      "parent": "/_authenticated"
+    },
+    "/_authenticated/clients/": {
+      "filePath": "_authenticated/clients/index.tsx",
+      "parent": "/_authenticated"
     },
     "/_authenticated/profile/": {
       "filePath": "_authenticated/profile/index.tsx",

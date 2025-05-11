@@ -5,6 +5,7 @@ import (
 	"github.com/Satishcg12/CentralAuthV2/server/internal/db"
 	"github.com/Satishcg12/CentralAuthV2/server/internal/domains"
 	"github.com/Satishcg12/CentralAuthV2/server/internal/domains/auth"
+	"github.com/Satishcg12/CentralAuthV2/server/internal/domains/client"
 	"github.com/Satishcg12/CentralAuthV2/server/internal/domains/health"
 	"github.com/Satishcg12/CentralAuthV2/server/internal/middlewares"
 	"github.com/labstack/echo/v4"
@@ -20,6 +21,7 @@ func SetupRoutes(e *echo.Echo, store *db.Store, cfg *config.Config, cm middlewar
 
 	// Create handlers
 	authHandler := auth.NewAuthHandler(ah)
+	clientHandler := client.NewClientHandler(ah)
 	// userHandler := handlers.NewUserHandler(ah)
 	// roleHandler := handlers.NewRoleHandler(ah)
 	// permissionHandler := handlers.NewPermissionHandler(ah)
@@ -48,6 +50,27 @@ func SetupRoutes(e *echo.Echo, store *db.Store, cfg *config.Config, cm middlewar
 	// authProtected.DELETE("/sessions/:id", authHandler.RevokeSession)
 	// authProtected.PUT("/sessions/:id", authHandler.UpdateSessionName)
 	// authProtected.GET("/sessions/filter", authHandler.FilterSessions)
+
+	// Client routes - require authentication and permissions
+	clients := v1.Group("/clients")
+	clients.Use(cm.RequireAuthMiddleware())
+
+	// Routes that require client_read permission
+	clientRead := clients.Group("")
+	// clientRead.Use(cm.RequirePermission("client_read"))
+	clientRead.GET("", clientHandler.GetAll)
+	clientRead.GET("/:id", clientHandler.GetByID)
+
+	// Routes that require client_write permission
+	clientWrite := clients.Group("")
+	// clientWrite.Use(cm.RequirePermission("client_write"))
+	clientWrite.POST("", clientHandler.Create)
+	clientWrite.PUT("/:id", clientHandler.Update)
+	clientWrite.DELETE("/:id", clientHandler.Delete)
+	clientWrite.POST("/:id/regenerate-secret", clientHandler.RegenerateSecret)
+
+	// New route to handle regenerating client secret by client_id (UUID)
+	clientWrite.POST("/regenerate-secret/:client_id", clientHandler.RegenerateSecretByClientID)
 
 	// // User routes - most require authentication
 	// users := v1.Group("/users")

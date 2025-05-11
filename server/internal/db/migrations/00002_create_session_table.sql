@@ -1,8 +1,13 @@
 -- +goose Up
 -- +goose StatementBegin
-CREATE TYPE session_status AS ENUM ('active', 'inactive', 'revoked');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'session_status') THEN
+        CREATE TYPE session_status AS ENUM ('active', 'inactive', 'revoked');
+    END IF;
+END$$;
 
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
     id SERIAL PRIMARY KEY,
     device_name VARCHAR(255),
     ip_address VARCHAR(45),

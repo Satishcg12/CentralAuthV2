@@ -99,7 +99,7 @@ export const Text = forwardRef<HTMLElement, TextProps>(
     return (
       <Component
         ref={ref}
-        className={cn(sizeStyles, weightStyles, variantStyles, className)}
+        className={cn(sizeStyles, weightStyles, variantStyles, className, " inline-block ")}
         {...props}
       >
         {children}

@@ -51,11 +51,11 @@ const data = {
       isActive: true,
       items: [
         {
-          title: "Client",
-          url: "/admin/applications/client-management",
+          title: "OAuth Clients",
+          url: "/clients",
         },
         {
-          title: "Client Role",
+          title: "Client Roles",
           url: "/admin/applications/role",
         },
       ],

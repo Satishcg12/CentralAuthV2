@@ -11,10 +11,14 @@ import (
 
 type Querier interface {
 	CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (int32, error)
+	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (int32, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (int32, error)
+	DeleteClient(ctx context.Context, id int32) error
 	GetAccessTokenByRefreshTokenID(ctx context.Context, refreshTokenID int32) (AccessToken, error)
 	GetAccessTokenByToken(ctx context.Context, token string) (GetAccessTokenByTokenRow, error)
+	GetClientByClientID(ctx context.Context, clientID string) (Client, error)
+	GetClientByID(ctx context.Context, id int32) (Client, error)
 	GetRefreshTokenByClientID(ctx context.Context, arg GetRefreshTokenByClientIDParams) ([]RefreshToken, error)
 	GetRefreshTokenByToken(ctx context.Context, token string) (GetRefreshTokenByTokenRow, error)
 	GetRefreshTokensBySessionID(ctx context.Context, sessionID int32) ([]RefreshToken, error)
@@ -27,11 +31,14 @@ type Querier interface {
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	GetUserSessions(ctx context.Context, userID int32) ([]GetUserSessionsRow, error)
 	InvalidateRefreshToken(ctx context.Context, id int32) error
+	ListClients(ctx context.Context) ([]Client, error)
 	LogoutSession(ctx context.Context, id int32) error
 	RegisterUser(ctx context.Context, arg RegisterUserParams) (User, error)
 	RevokeAllUserSessions(ctx context.Context, userID int32) error
 	RevokeSession(ctx context.Context, id int32) error
 	UpdateAccessToken(ctx context.Context, arg UpdateAccessTokenParams) error
+	UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error)
+	UpdateClientSecret(ctx context.Context, arg UpdateClientSecretParams) (Client, error)
 	UpdateLastAccessed(ctx context.Context, id int32) error
 }
 

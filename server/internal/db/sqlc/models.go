@@ -9,8 +9,6 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type SessionStatus string
@@ -65,15 +63,16 @@ type AccessToken struct {
 }
 
 type Client struct {
-	ClientID             uuid.UUID     `json:"client_id"`
-	ClientName           string        `json:"client_name"`
-	ClientSecretHash     string        `json:"client_secret_hash"`
-	RedirectUris         []string      `json:"redirect_uris"`
-	CreatedAt            time.Time     `json:"created_at"`
-	QrLoginEnabled       sql.NullBool  `json:"qr_login_enabled"`
-	OidcEnabled          sql.NullBool  `json:"oidc_enabled"`
-	TokenLifespan        sql.NullInt32 `json:"token_lifespan"`
-	RefreshTokenLifespan sql.NullInt32 `json:"refresh_token_lifespan"`
+	ID           int32          `json:"id"`
+	ClientID     string         `json:"client_id"`
+	ClientSecret string         `json:"client_secret"`
+	Name         string         `json:"name"`
+	Description  sql.NullString `json:"description"`
+	Website      sql.NullString `json:"website"`
+	RedirectUri  string         `json:"redirect_uri"`
+	IsPublic     bool           `json:"is_public"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
 }
 
 type RefreshToken struct {
