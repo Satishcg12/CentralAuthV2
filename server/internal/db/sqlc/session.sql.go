@@ -131,15 +131,15 @@ LIMIT 1
 `
 
 type GetAccessTokenByTokenRow struct {
-	ID             int32         `json:"id"`
-	RefreshTokenID int32         `json:"refresh_token_id"`
-	Token          string        `json:"token"`
-	ExpiresAt      time.Time     `json:"expires_at"`
-	CreatedAt      time.Time     `json:"created_at"`
-	SessionID      int32         `json:"session_id"`
-	UserID         int32         `json:"user_id"`
-	Status         SessionStatus `json:"status"`
-	IsLogout       bool          `json:"is_logout"`
+	ID             int32       `json:"id"`
+	RefreshTokenID int32       `json:"refresh_token_id"`
+	Token          string      `json:"token"`
+	ExpiresAt      time.Time   `json:"expires_at"`
+	CreatedAt      time.Time   `json:"created_at"`
+	SessionID      int32       `json:"session_id"`
+	UserID         int32       `json:"user_id"`
+	Status         interface{} `json:"status"`
+	IsLogout       bool        `json:"is_logout"`
 }
 
 func (q *Queries) GetAccessTokenByToken(ctx context.Context, token string) (GetAccessTokenByTokenRow, error) {
@@ -223,7 +223,7 @@ type GetRefreshTokenByTokenRow struct {
 	CreatedAt time.Time      `json:"created_at"`
 	UserID    int32          `json:"user_id"`
 	IsLogout  bool           `json:"is_logout"`
-	Status    SessionStatus  `json:"status"`
+	Status    interface{}    `json:"status"`
 }
 
 func (q *Queries) GetRefreshTokenByToken(ctx context.Context, token string) (GetRefreshTokenByTokenRow, error) {
@@ -348,7 +348,7 @@ type GetUserSessionsRow struct {
 	DeviceName     sql.NullString `json:"device_name"`
 	IpAddress      sql.NullString `json:"ip_address"`
 	UserAgent      sql.NullString `json:"user_agent"`
-	Status         SessionStatus  `json:"status"`
+	Status         interface{}    `json:"status"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	IsLogout       bool           `json:"is_logout"`

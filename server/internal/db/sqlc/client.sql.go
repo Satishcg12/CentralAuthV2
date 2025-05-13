@@ -8,6 +8,8 @@ package sqlc
 import (
 	"context"
 	"database/sql"
+
+	"github.com/lib/pq"
 )
 
 const createClient = `-- name: CreateClient :one
@@ -18,20 +20,28 @@ INSERT INTO clients (
     description,
     website,
     redirect_uri,
-    is_public
+    is_public,
+    oidc_enabled,
+    allowed_scopes,
+    allowed_grant_types,
+    allowed_response_types
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+) RETURNING id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at, oidc_enabled, allowed_scopes, allowed_grant_types, allowed_response_types
 `
 
 type CreateClientParams struct {
-	ClientID     string         `json:"client_id"`
-	ClientSecret string         `json:"client_secret"`
-	Name         string         `json:"name"`
-	Description  sql.NullString `json:"description"`
-	Website      sql.NullString `json:"website"`
-	RedirectUri  string         `json:"redirect_uri"`
-	IsPublic     bool           `json:"is_public"`
+	ClientID             string         `json:"client_id"`
+	ClientSecret         string         `json:"client_secret"`
+	Name                 string         `json:"name"`
+	Description          sql.NullString `json:"description"`
+	Website              sql.NullString `json:"website"`
+	RedirectUri          string         `json:"redirect_uri"`
+	IsPublic             bool           `json:"is_public"`
+	OidcEnabled          bool           `json:"oidc_enabled"`
+	AllowedScopes        []string       `json:"allowed_scopes"`
+	AllowedGrantTypes    []string       `json:"allowed_grant_types"`
+	AllowedResponseTypes []string       `json:"allowed_response_types"`
 }
 
 func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Client, error) {
@@ -43,6 +53,10 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Cli
 		arg.Website,
 		arg.RedirectUri,
 		arg.IsPublic,
+		arg.OidcEnabled,
+		pq.Array(arg.AllowedScopes),
+		pq.Array(arg.AllowedGrantTypes),
+		pq.Array(arg.AllowedResponseTypes),
 	)
 	var i Client
 	err := row.Scan(
@@ -56,6 +70,10 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Cli
 		&i.IsPublic,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OidcEnabled,
+		pq.Array(&i.AllowedScopes),
+		pq.Array(&i.AllowedGrantTypes),
+		pq.Array(&i.AllowedResponseTypes),
 	)
 	return i, err
 }
@@ -71,7 +89,7 @@ func (q *Queries) DeleteClient(ctx context.Context, id int32) error {
 }
 
 const getClientByClientID = `-- name: GetClientByClientID :one
-SELECT id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at FROM clients
+SELECT id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at, oidc_enabled, allowed_scopes, allowed_grant_types, allowed_response_types FROM clients
 WHERE client_id = $1 LIMIT 1
 `
 
@@ -89,12 +107,16 @@ func (q *Queries) GetClientByClientID(ctx context.Context, clientID string) (Cli
 		&i.IsPublic,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OidcEnabled,
+		pq.Array(&i.AllowedScopes),
+		pq.Array(&i.AllowedGrantTypes),
+		pq.Array(&i.AllowedResponseTypes),
 	)
 	return i, err
 }
 
 const getClientByID = `-- name: GetClientByID :one
-SELECT id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at FROM clients
+SELECT id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at, oidc_enabled, allowed_scopes, allowed_grant_types, allowed_response_types FROM clients
 WHERE id = $1 LIMIT 1
 `
 
@@ -112,12 +134,16 @@ func (q *Queries) GetClientByID(ctx context.Context, id int32) (Client, error) {
 		&i.IsPublic,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OidcEnabled,
+		pq.Array(&i.AllowedScopes),
+		pq.Array(&i.AllowedGrantTypes),
+		pq.Array(&i.AllowedResponseTypes),
 	)
 	return i, err
 }
 
 const listClients = `-- name: ListClients :many
-SELECT id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at FROM clients
+SELECT id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at, oidc_enabled, allowed_scopes, allowed_grant_types, allowed_response_types FROM clients
 ORDER BY created_at DESC
 `
 
@@ -141,6 +167,10 @@ func (q *Queries) ListClients(ctx context.Context) ([]Client, error) {
 			&i.IsPublic,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.OidcEnabled,
+			pq.Array(&i.AllowedScopes),
+			pq.Array(&i.AllowedGrantTypes),
+			pq.Array(&i.AllowedResponseTypes),
 		); err != nil {
 			return nil, err
 		}
@@ -163,18 +193,26 @@ SET
     website = $4,
     redirect_uri = $5,
     is_public = $6,
+    oidc_enabled = $7,
+    allowed_scopes = $8,
+    allowed_grant_types = $9,
+    allowed_response_types = $10,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at
+RETURNING id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at, oidc_enabled, allowed_scopes, allowed_grant_types, allowed_response_types
 `
 
 type UpdateClientParams struct {
-	ID          int32          `json:"id"`
-	Name        string         `json:"name"`
-	Description sql.NullString `json:"description"`
-	Website     sql.NullString `json:"website"`
-	RedirectUri string         `json:"redirect_uri"`
-	IsPublic    bool           `json:"is_public"`
+	ID                   int32          `json:"id"`
+	Name                 string         `json:"name"`
+	Description          sql.NullString `json:"description"`
+	Website              sql.NullString `json:"website"`
+	RedirectUri          string         `json:"redirect_uri"`
+	IsPublic             bool           `json:"is_public"`
+	OidcEnabled          bool           `json:"oidc_enabled"`
+	AllowedScopes        []string       `json:"allowed_scopes"`
+	AllowedGrantTypes    []string       `json:"allowed_grant_types"`
+	AllowedResponseTypes []string       `json:"allowed_response_types"`
 }
 
 func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error) {
@@ -185,6 +223,10 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Cli
 		arg.Website,
 		arg.RedirectUri,
 		arg.IsPublic,
+		arg.OidcEnabled,
+		pq.Array(arg.AllowedScopes),
+		pq.Array(arg.AllowedGrantTypes),
+		pq.Array(arg.AllowedResponseTypes),
 	)
 	var i Client
 	err := row.Scan(
@@ -198,6 +240,10 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Cli
 		&i.IsPublic,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OidcEnabled,
+		pq.Array(&i.AllowedScopes),
+		pq.Array(&i.AllowedGrantTypes),
+		pq.Array(&i.AllowedResponseTypes),
 	)
 	return i, err
 }
@@ -208,7 +254,7 @@ SET
     client_secret = $2,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = $1
-RETURNING id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at
+RETURNING id, client_id, client_secret, name, description, website, redirect_uri, is_public, created_at, updated_at, oidc_enabled, allowed_scopes, allowed_grant_types, allowed_response_types
 `
 
 type UpdateClientSecretParams struct {
@@ -230,6 +276,10 @@ func (q *Queries) UpdateClientSecret(ctx context.Context, arg UpdateClientSecret
 		&i.IsPublic,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.OidcEnabled,
+		pq.Array(&i.AllowedScopes),
+		pq.Array(&i.AllowedGrantTypes),
+		pq.Array(&i.AllowedResponseTypes),
 	)
 	return i, err
 }

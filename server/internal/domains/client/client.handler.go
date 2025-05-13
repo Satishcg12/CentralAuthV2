@@ -63,8 +63,12 @@ func (h *ClientHandler) Create(c echo.Context) error {
 			String: req.Website,
 			Valid:  req.Website != "",
 		},
-		RedirectUri: req.RedirectURI,
-		IsPublic:    req.IsPublic,
+		RedirectUri:          req.RedirectURI,
+		IsPublic:             req.IsPublic,
+		OidcEnabled:          req.OIDCEnabled,
+		AllowedScopes:        req.AllowedScopes,
+		AllowedGrantTypes:    req.AllowedGrantTypes,
+		AllowedResponseTypes: req.AllowedResponseTypes,
 	})
 
 	if err != nil {
@@ -80,16 +84,20 @@ func (h *ClientHandler) Create(c echo.Context) error {
 
 	// Prepare response
 	res := ClientDetailResponse{
-		ID:           int64(client.ID),
-		ClientID:     client.ClientID,
-		ClientSecret: client.ClientSecret,
-		Name:         client.Name,
-		Description:  client.Description.String,
-		Website:      client.Website.String,
-		RedirectURI:  client.RedirectUri,
-		IsPublic:     client.IsPublic,
-		CreatedAt:    client.CreatedAt,
-		UpdatedAt:    client.UpdatedAt,
+		ID:                   int64(client.ID),
+		ClientID:             client.ClientID,
+		ClientSecret:         client.ClientSecret,
+		Name:                 client.Name,
+		Description:          client.Description.String,
+		Website:              client.Website.String,
+		RedirectURI:          client.RedirectUri,
+		IsPublic:             client.IsPublic,
+		OIDCEnabled:          client.OidcEnabled,
+		AllowedScopes:        client.AllowedScopes,
+		AllowedGrantTypes:    client.AllowedGrantTypes,
+		AllowedResponseTypes: client.AllowedResponseTypes,
+		CreatedAt:            client.CreatedAt,
+		UpdatedAt:            client.UpdatedAt,
 	}
 
 	return utils.RespondWithSuccess(
@@ -118,15 +126,19 @@ func (h *ClientHandler) GetAll(c echo.Context) error {
 	clientResponses := make([]ClientResponse, 0, len(clients))
 	for _, client := range clients {
 		clientResponses = append(clientResponses, ClientResponse{
-			ID:          int64(client.ID),
-			ClientID:    client.ClientID,
-			Name:        client.Name,
-			Description: client.Description.String,
-			Website:     client.Website.String,
-			RedirectURI: client.RedirectUri,
-			IsPublic:    client.IsPublic,
-			CreatedAt:   client.CreatedAt,
-			UpdatedAt:   client.UpdatedAt,
+			ID:                   int64(client.ID),
+			ClientID:             client.ClientID,
+			Name:                 client.Name,
+			Description:          client.Description.String,
+			Website:              client.Website.String,
+			RedirectURI:          client.RedirectUri,
+			IsPublic:             client.IsPublic,
+			OIDCEnabled:          client.OidcEnabled,
+			AllowedScopes:        client.AllowedScopes,
+			AllowedGrantTypes:    client.AllowedGrantTypes,
+			AllowedResponseTypes: client.AllowedResponseTypes,
+			CreatedAt:            client.CreatedAt,
+			UpdatedAt:            client.UpdatedAt,
 		})
 	}
 
@@ -192,15 +204,19 @@ func (h *ClientHandler) GetByID(c echo.Context) error {
 
 	// Prepare response (without secret)
 	res := ClientResponse{
-		ID:          int64(client.ID),
-		ClientID:    client.ClientID,
-		Name:        client.Name,
-		Description: client.Description.String,
-		Website:     client.Website.String,
-		RedirectURI: client.RedirectUri,
-		IsPublic:    client.IsPublic,
-		CreatedAt:   client.CreatedAt,
-		UpdatedAt:   client.UpdatedAt,
+		ID:                   int64(client.ID),
+		ClientID:             client.ClientID,
+		Name:                 client.Name,
+		Description:          client.Description.String,
+		Website:              client.Website.String,
+		RedirectURI:          client.RedirectUri,
+		IsPublic:             client.IsPublic,
+		OIDCEnabled:          client.OidcEnabled,
+		AllowedScopes:        client.AllowedScopes,
+		AllowedGrantTypes:    client.AllowedGrantTypes,
+		AllowedResponseTypes: client.AllowedResponseTypes,
+		CreatedAt:            client.CreatedAt,
+		UpdatedAt:            client.UpdatedAt,
 	}
 
 	return utils.RespondWithSuccess(
@@ -290,8 +306,12 @@ func (h *ClientHandler) Update(c echo.Context) error {
 			String: req.Website,
 			Valid:  req.Website != "",
 		},
-		RedirectUri: req.RedirectURI,
-		IsPublic:    req.IsPublic,
+		RedirectUri:          req.RedirectURI,
+		IsPublic:             req.IsPublic,
+		OidcEnabled:          req.OIDCEnabled,
+		AllowedScopes:        req.AllowedScopes,
+		AllowedGrantTypes:    req.AllowedGrantTypes,
+		AllowedResponseTypes: req.AllowedResponseTypes,
 	})
 
 	if err != nil {
@@ -307,15 +327,19 @@ func (h *ClientHandler) Update(c echo.Context) error {
 
 	// Prepare response
 	res := ClientResponse{
-		ID:          int64(client.ID),
-		ClientID:    client.ClientID,
-		Name:        client.Name,
-		Description: client.Description.String,
-		Website:     client.Website.String,
-		RedirectURI: client.RedirectUri,
-		IsPublic:    client.IsPublic,
-		CreatedAt:   client.CreatedAt,
-		UpdatedAt:   client.UpdatedAt,
+		ID:                   int64(client.ID),
+		ClientID:             client.ClientID,
+		Name:                 client.Name,
+		Description:          client.Description.String,
+		Website:              client.Website.String,
+		RedirectURI:          client.RedirectUri,
+		IsPublic:             client.IsPublic,
+		OIDCEnabled:          client.OidcEnabled,
+		AllowedScopes:        client.AllowedScopes,
+		AllowedGrantTypes:    client.AllowedGrantTypes,
+		AllowedResponseTypes: client.AllowedResponseTypes,
+		CreatedAt:            client.CreatedAt,
+		UpdatedAt:            client.UpdatedAt,
 	}
 
 	return utils.RespondWithSuccess(
@@ -479,16 +503,20 @@ func (h *ClientHandler) RegenerateSecret(c echo.Context) error {
 
 	// Prepare response
 	res := ClientDetailResponse{
-		ID:           int64(client.ID),
-		ClientID:     client.ClientID,
-		ClientSecret: client.ClientSecret,
-		Name:         client.Name,
-		Description:  client.Description.String,
-		Website:      client.Website.String,
-		RedirectURI:  client.RedirectUri,
-		IsPublic:     client.IsPublic,
-		CreatedAt:    client.CreatedAt,
-		UpdatedAt:    client.UpdatedAt,
+		ID:                   int64(client.ID),
+		ClientID:             client.ClientID,
+		ClientSecret:         client.ClientSecret,
+		Name:                 client.Name,
+		Description:          client.Description.String,
+		Website:              client.Website.String,
+		RedirectURI:          client.RedirectUri,
+		IsPublic:             client.IsPublic,
+		OIDCEnabled:          client.OidcEnabled,
+		AllowedScopes:        client.AllowedScopes,
+		AllowedGrantTypes:    client.AllowedGrantTypes,
+		AllowedResponseTypes: client.AllowedResponseTypes,
+		CreatedAt:            client.CreatedAt,
+		UpdatedAt:            client.UpdatedAt,
 	}
 
 	return utils.RespondWithSuccess(
@@ -568,16 +596,20 @@ func (h *ClientHandler) RegenerateSecretByClientID(c echo.Context) error {
 
 	// Prepare response
 	res := ClientDetailResponse{
-		ID:           int64(updatedClient.ID),
-		ClientID:     updatedClient.ClientID,
-		ClientSecret: updatedClient.ClientSecret,
-		Name:         updatedClient.Name,
-		Description:  updatedClient.Description.String,
-		Website:      updatedClient.Website.String,
-		RedirectURI:  updatedClient.RedirectUri,
-		IsPublic:     updatedClient.IsPublic,
-		CreatedAt:    updatedClient.CreatedAt,
-		UpdatedAt:    updatedClient.UpdatedAt,
+		ID:                   int64(updatedClient.ID),
+		ClientID:             updatedClient.ClientID,
+		ClientSecret:         updatedClient.ClientSecret,
+		Name:                 updatedClient.Name,
+		Description:          updatedClient.Description.String,
+		Website:              updatedClient.Website.String,
+		RedirectURI:          updatedClient.RedirectUri,
+		IsPublic:             updatedClient.IsPublic,
+		OIDCEnabled:          updatedClient.OidcEnabled,
+		AllowedScopes:        updatedClient.AllowedScopes,
+		AllowedGrantTypes:    updatedClient.AllowedGrantTypes,
+		AllowedResponseTypes: updatedClient.AllowedResponseTypes,
+		CreatedAt:            updatedClient.CreatedAt,
+		UpdatedAt:            updatedClient.UpdatedAt,
 	}
 
 	return utils.RespondWithSuccess(

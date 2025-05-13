@@ -12,13 +12,21 @@ import (
 type Querier interface {
 	CreateAccessToken(ctx context.Context, arg CreateAccessTokenParams) (int32, error)
 	CreateClient(ctx context.Context, arg CreateClientParams) (Client, error)
+	CreateOIDCAccessToken(ctx context.Context, arg CreateOIDCAccessTokenParams) (OidcAccessToken, error)
+	CreateOIDCAuthCode(ctx context.Context, arg CreateOIDCAuthCodeParams) (OidcAuthCode, error)
+	CreateOIDCRefreshToken(ctx context.Context, arg CreateOIDCRefreshTokenParams) (OidcRefreshToken, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (int32, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (int32, error)
 	DeleteClient(ctx context.Context, id int32) error
+	DeleteExpiredOIDCTokens(ctx context.Context) error
 	GetAccessTokenByRefreshTokenID(ctx context.Context, refreshTokenID int32) (AccessToken, error)
 	GetAccessTokenByToken(ctx context.Context, token string) (GetAccessTokenByTokenRow, error)
 	GetClientByClientID(ctx context.Context, clientID string) (Client, error)
 	GetClientByID(ctx context.Context, id int32) (Client, error)
+	GetClientWithOIDCSettings(ctx context.Context, clientID string) (Client, error)
+	GetOIDCAccessTokenByToken(ctx context.Context, token string) (OidcAccessToken, error)
+	GetOIDCAuthCodeByCode(ctx context.Context, code string) (OidcAuthCode, error)
+	GetOIDCRefreshTokenByToken(ctx context.Context, token string) (OidcRefreshToken, error)
 	GetRefreshTokenByClientID(ctx context.Context, arg GetRefreshTokenByClientIDParams) ([]RefreshToken, error)
 	GetRefreshTokenByToken(ctx context.Context, token string) (GetRefreshTokenByTokenRow, error)
 	GetRefreshTokensBySessionID(ctx context.Context, sessionID int32) ([]RefreshToken, error)
@@ -33,11 +41,15 @@ type Querier interface {
 	InvalidateRefreshToken(ctx context.Context, id int32) error
 	ListClients(ctx context.Context) ([]Client, error)
 	LogoutSession(ctx context.Context, id int32) error
+	MarkOIDCAuthCodeAsUsed(ctx context.Context, code string) error
 	RegisterUser(ctx context.Context, arg RegisterUserParams) (User, error)
+	RevokeAllClientUserRefreshTokens(ctx context.Context, arg RevokeAllClientUserRefreshTokensParams) error
 	RevokeAllUserSessions(ctx context.Context, userID int32) error
+	RevokeOIDCRefreshToken(ctx context.Context, token string) error
 	RevokeSession(ctx context.Context, id int32) error
 	UpdateAccessToken(ctx context.Context, arg UpdateAccessTokenParams) error
 	UpdateClient(ctx context.Context, arg UpdateClientParams) (Client, error)
+	UpdateClientOIDCSettings(ctx context.Context, arg UpdateClientOIDCSettingsParams) (Client, error)
 	UpdateClientSecret(ctx context.Context, arg UpdateClientSecretParams) (Client, error)
 	UpdateLastAccessed(ctx context.Context, id int32) error
 }

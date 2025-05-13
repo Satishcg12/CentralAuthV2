@@ -75,6 +75,15 @@ function ClientListPage() {
       ),
     },
     {
+      accessorKey: 'oidc_enabled',
+      header: 'OIDC',
+      cell: ({ row }) => (
+        <Badge variant={row.original.oidc_enabled ? "default" : "outline"}>
+          {row.original.oidc_enabled ? 'Enabled' : 'Disabled'}
+        </Badge>
+      ),
+    },
+    {
       id: 'actions',
       cell: ({ row }) => (
         <div className="flex justify-end">

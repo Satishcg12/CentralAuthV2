@@ -4,6 +4,10 @@ export interface CreateClientRequest {
     website?: string;
     redirect_uri: string;
     is_public: boolean;
+    oidc_enabled: boolean;
+    allowed_scopes?: string[];
+    allowed_grant_types?: string[];
+    allowed_response_types?: string[];
 }
 
 export interface UpdateClientRequest {
@@ -12,6 +16,10 @@ export interface UpdateClientRequest {
     website?: string;
     redirect_uri: string;
     is_public: boolean;
+    oidc_enabled: boolean;
+    allowed_scopes?: string[];
+    allowed_grant_types?: string[];
+    allowed_response_types?: string[];
 }
 
 export interface ClientResponse {
@@ -22,6 +30,10 @@ export interface ClientResponse {
     website: string;
     redirect_uri: string;
     is_public: boolean;
+    oidc_enabled: boolean;
+    allowed_scopes: string[];
+    allowed_grant_types: string[];
+    allowed_response_types: string[];
     created_at: string;
     updated_at: string;
 }

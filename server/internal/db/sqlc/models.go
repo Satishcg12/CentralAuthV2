@@ -6,53 +6,8 @@ package sqlc
 
 import (
 	"database/sql"
-	"database/sql/driver"
-	"fmt"
 	"time"
 )
-
-type SessionStatus string
-
-const (
-	SessionStatusActive   SessionStatus = "active"
-	SessionStatusInactive SessionStatus = "inactive"
-	SessionStatusRevoked  SessionStatus = "revoked"
-)
-
-func (e *SessionStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = SessionStatus(s)
-	case string:
-		*e = SessionStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for SessionStatus: %T", src)
-	}
-	return nil
-}
-
-type NullSessionStatus struct {
-	SessionStatus SessionStatus `json:"session_status"`
-	Valid         bool          `json:"valid"` // Valid is true if SessionStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullSessionStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.SessionStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.SessionStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullSessionStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.SessionStatus), nil
-}
 
 type AccessToken struct {
 	ID             int32     `json:"id"`
@@ -63,16 +18,57 @@ type AccessToken struct {
 }
 
 type Client struct {
-	ID           int32          `json:"id"`
-	ClientID     string         `json:"client_id"`
-	ClientSecret string         `json:"client_secret"`
-	Name         string         `json:"name"`
-	Description  sql.NullString `json:"description"`
-	Website      sql.NullString `json:"website"`
-	RedirectUri  string         `json:"redirect_uri"`
-	IsPublic     bool           `json:"is_public"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
+	ID                   int32          `json:"id"`
+	ClientID             string         `json:"client_id"`
+	ClientSecret         string         `json:"client_secret"`
+	Name                 string         `json:"name"`
+	Description          sql.NullString `json:"description"`
+	Website              sql.NullString `json:"website"`
+	RedirectUri          string         `json:"redirect_uri"`
+	IsPublic             bool           `json:"is_public"`
+	CreatedAt            time.Time      `json:"created_at"`
+	UpdatedAt            time.Time      `json:"updated_at"`
+	OidcEnabled          bool           `json:"oidc_enabled"`
+	AllowedScopes        []string       `json:"allowed_scopes"`
+	AllowedGrantTypes    []string       `json:"allowed_grant_types"`
+	AllowedResponseTypes []string       `json:"allowed_response_types"`
+}
+
+type OidcAccessToken struct {
+	ID        int32     `json:"id"`
+	Token     string    `json:"token"`
+	ClientID  string    `json:"client_id"`
+	UserID    int32     `json:"user_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Scopes    []string  `json:"scopes"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type OidcAuthCode struct {
+	ID                  int32          `json:"id"`
+	Code                string         `json:"code"`
+	ClientID            string         `json:"client_id"`
+	UserID              int32          `json:"user_id"`
+	RedirectUri         string         `json:"redirect_uri"`
+	ExpiresAt           time.Time      `json:"expires_at"`
+	Scopes              []string       `json:"scopes"`
+	CodeChallenge       sql.NullString `json:"code_challenge"`
+	CodeChallengeMethod sql.NullString `json:"code_challenge_method"`
+	Used                bool           `json:"used"`
+	Nonce               sql.NullString `json:"nonce"`
+	CreatedAt           time.Time      `json:"created_at"`
+}
+
+type OidcRefreshToken struct {
+	ID            int32     `json:"id"`
+	Token         string    `json:"token"`
+	ClientID      string    `json:"client_id"`
+	UserID        int32     `json:"user_id"`
+	AccessTokenID int32     `json:"access_token_id"`
+	ExpiresAt     time.Time `json:"expires_at"`
+	Scopes        []string  `json:"scopes"`
+	Revoked       bool      `json:"revoked"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type RefreshToken struct {
@@ -89,7 +85,7 @@ type Session struct {
 	DeviceName     sql.NullString `json:"device_name"`
 	IpAddress      sql.NullString `json:"ip_address"`
 	UserAgent      sql.NullString `json:"user_agent"`
-	Status         SessionStatus  `json:"status"`
+	Status         interface{}    `json:"status"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	IsLogout       bool           `json:"is_logout"`
